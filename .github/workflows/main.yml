@@ -28,6 +28,8 @@ jobs:
         run: |
           echo "::set-output name=sha_short::$(git rev-parse --short HEAD)"
           echo "::set-output name=td_sha::$(git rev-parse HEAD)"
+          echo "::set-output name=td_commit_date::$(git show -s --date=format:'%d-%m-%Y %H:%M' --format=%cd)"
+          echo "::set-output name=date::$(date +'%d-%m-%Y %H:%M')"
         
       - name: Get version
         id: ver
@@ -47,16 +49,14 @@ jobs:
         name: cancelling
         uses: andymckay/cancel-action@0.2
 
-      - name: Get current date
-        id: date
-        run: echo "::set-output name=date::$(date +'%d-%m-%Y')"
-        
       - name: Create release
         id: create_release
         uses: softprops/action-gh-release@v1
         with:
           body: |
-              Release date: ${{ steps.date.outputs.date }}
+              TDLib commit date: ${{ steps.vars.outputs.td_commit_date }}
+              TDLib SHA: ${{ github.event.inputs.tdSha }}
+              Build date: ${{ steps.vars.outputs.date }}
           tag_name: ${{ github.ref }}/${{ steps.vars.outputs.sha_short }}
           name: '${{ steps.ver.outputs.td_version }}'
           draft: true

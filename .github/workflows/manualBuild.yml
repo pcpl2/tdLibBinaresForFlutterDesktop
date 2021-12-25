@@ -23,7 +23,10 @@ jobs:
       
       - name: Set outputs
         id: vars
-        run: echo "::set-output name=sha_short::$(git rev-parse --short HEAD)"
+        run: |
+          echo "::set-output name=sha_short::$(git rev-parse --short HEAD)"
+          echo "::set-output name=td_commit_date::$(git show -s --date=format:'%d-%m-%Y %H:%M' --format=%cd)"
+          echo "::set-output name=date::$(date +'%d-%m-%Y %H:%M')"
         
       - name: Get version
         id: ver
@@ -31,17 +34,15 @@ jobs:
           cd td/telegram
           echo 'grep -in TDLIB_VERSION Td.h | egrep -o "([0-9]{1,}\.)+[0-9]{1,}"'
           echo "::set-output name=td_version::$(grep -in TDLIB_VERSION Td.h | egrep -o '([0-9]{1,}\.)+[0-9]{1,}')"
-
-      - name: Get current date
-        id: date
-        run: echo "::set-output name=date::$(date +'%d-%m-%Y')"
         
       - name: Create release
         id: create_release
         uses: softprops/action-gh-release@v1
         with:
           body: |
-              Release date: ${{ steps.date.outputs.date }}
+              TDLib commit date: ${{ steps.vars.outputs.td_commit_date }}
+              TDLib SHA: ${{ github.event.inputs.tdSha }}
+              Build date: ${{ steps.vars.outputs.date }}
           tag_name: ${{ github.ref }}/${{ steps.vars.outputs.sha_short }}
           name: '${{ steps.ver.outputs.td_version }}'
           draft: true
