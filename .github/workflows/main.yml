@@ -61,7 +61,6 @@ jobs:
           prerelease: false
 
       - name: Print url upload 
-        id: vars
         run: echo "${{steps.create_release.outputs.upload_url}}"
           
   linux:
