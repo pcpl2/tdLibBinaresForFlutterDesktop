@@ -18,7 +18,7 @@ jobs:
       - name: Checkout tdLib repo
         uses: actions/checkout@v2
         with:
-          ref: ${{ github.event.inputs.version }}
+          ref: ${{ github.event.inputs.tdSha }}
           repository: tdlib/td
       
       - name: Set outputs
@@ -57,7 +57,7 @@ jobs:
       - name: Checkout tdLib repo
         uses: actions/checkout@v2
         with:
-          ref: ${{ github.event.inputs.version }}
+          ref: ${{ github.event.inputs.tdSha }}
           repository: tdlib/td
     
       - name: Install packages
@@ -117,7 +117,7 @@ jobs:
       - name: Checkout tdLib repo
         uses: actions/checkout@v2
         with:
-          ref: ${{ github.event.inputs.version }}
+          ref: ${{ github.event.inputs.tdSha }}
           repository: tdlib/td
     
       - name: Cache vcpkg
@@ -182,7 +182,7 @@ jobs:
       - name: Checkout tdLib repo
         uses: actions/checkout@v2
         with:
-          ref: ${{ github.event.inputs.version }}
+          ref: ${{ github.event.inputs.tdSha }}
           repository: tdlib/td
 
       - name: Configure Homebrew cache
