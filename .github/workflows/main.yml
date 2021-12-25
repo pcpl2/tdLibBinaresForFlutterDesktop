@@ -218,7 +218,7 @@ jobs:
           mkdir ../binaryR
           cp ../td/generate/scheme/td_api.tl ../binaryR
           cp ../tdlib/lib/libtdjson.dylib ../binaryR
-          cp ../tdlib/lib/libtdjson.1.7.9.dylib ../binaryR
+          cp ../tdlib/lib/libtdjson.${{ needs.create_release.outputs.td_version }}.dylib ../binaryR
           cp /usr/local/opt/openssl/lib/libcrypto.dylib ../binaryR
           cp /usr/local/opt/openssl@3/lib/libcrypto.3.dylib ../binaryR
           cp /usr/local/opt/openssl/lib/libssl.dylib ../binaryR
