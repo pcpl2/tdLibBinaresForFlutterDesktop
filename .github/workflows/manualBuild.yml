@@ -43,7 +43,6 @@ jobs:
               TDLib commit date: ${{ steps.vars.outputs.td_commit_date }}
               TDLib SHA: ${{ github.event.inputs.tdSha }}
               Build date: ${{ steps.vars.outputs.date }}
-          tag_name: ${{ github.ref }}/${{ steps.vars.outputs.sha_short }}
           name: '${{ steps.ver.outputs.td_version }}'
           draft: true
           prerelease: false
