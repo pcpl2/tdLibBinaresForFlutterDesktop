@@ -45,6 +45,7 @@ jobs:
               TDLib SHA: ${{ github.event.inputs.tdSha }}
               Build date: ${{ steps.vars.outputs.date }}
           name: '${{ steps.ver.outputs.td_version }}'
+          tag_name: '${{ steps.ver.outputs.td_version }}'
           draft: true
           prerelease: false
 
@@ -244,7 +245,7 @@ jobs:
           asset_content_type: application/octet-stream
 
   publish_release:
-    name: Create release
+    name: Publish release
     runs-on: ubuntu-latest
     needs: [create_release, linux, windows, macos]
     steps:
