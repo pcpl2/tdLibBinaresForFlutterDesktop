@@ -17,6 +17,7 @@ jobs:
       sha_short: ${{ steps.vars.outputs.sha_short }}
       td_version: ${{ steps.ver.outputs.td_version }}
       td_sha: ${{ steps.vars.outputs.td_sha }}
+      release_id: ${{ steps.create_release.outputs.id }}
     steps:
       - name: Checkout tdLib repo
         uses: actions/checkout@v2
@@ -58,6 +59,7 @@ jobs:
               TDLib SHA: ${{ github.event.inputs.tdSha }}
               Build date: ${{ steps.vars.outputs.date }}
           name: '${{ steps.ver.outputs.td_version }}'
+          tag_name: '${{ steps.ver.outputs.td_version }}'
           draft: true
           prerelease: false
 
@@ -252,3 +254,14 @@ jobs:
           asset_name: TDLib-x64-macos-10.15.zip
           asset_path: ${{ github.workspace }}/libs.zip
           asset_content_type: application/octet-stream
+
+  publish_release:
+    name: Publish release
+    runs-on: ubuntu-latest
+    needs: [create_release, linux, windows, macos]
+    steps:
+    - uses: eregon/publish-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        release_id: ${{ needs.create_release.outputs.release_id }}
