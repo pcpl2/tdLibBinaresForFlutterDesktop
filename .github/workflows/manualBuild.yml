@@ -100,7 +100,7 @@ jobs:
           path: binaryR
           
       - name: Make zip file
-        uses: papeloto/action-zip@v1
+        uses: vimtor/action-zip@v1
         with:
           files: binaryR
           dest: libs.zip
@@ -165,7 +165,7 @@ jobs:
           path: binaryR
           
       - name: Make zip file
-        uses: papeloto/action-zip@v1
+        uses: vimtor/action-zip@v1
         with:
           files: binaryR
           dest: libs.zip
@@ -229,7 +229,7 @@ jobs:
           path: binaryR
           
       - name: Make zip file
-        uses: papeloto/action-zip@v1
+        uses: vimtor/action-zip@v1
         with:
           files: binaryR
           dest: libs.zip
