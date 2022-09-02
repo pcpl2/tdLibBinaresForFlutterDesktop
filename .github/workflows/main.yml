@@ -35,7 +35,7 @@ jobs:
       - name: Get version
         id: ver
         run: |
-          cd td/telegram
+          cd td
           echo 'grep -in project\(TDLib CMakeLists.txt | egrep -o "([0-9]{1,}\.)+[0-9]{1,}"'
           echo "::set-output name=td_version::$(grep -in project\(TDLib CMakeLists.txt| egrep -o '([0-9]{1,}\.)+[0-9]{1,}')"
 
