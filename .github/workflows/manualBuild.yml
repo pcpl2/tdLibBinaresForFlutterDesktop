@@ -33,7 +33,9 @@ jobs:
       - name: Get version
         id: ver
         run: |
+          echo "files:\n$(ls -al)"
           cd td
+          echo "files:\n$(ls -al)"
           echo 'grep -in "project(TDLib" CMakeLists.txt | egrep -o "([0-9]{1,}\.)+[0-9]{1,}"'
           echo grep -in 'project(TDLib' CMakeLists.txt| egrep -o '([0-9]{1,}\.)+[0-9]{1,}'
           echo "::set-output name=td_version::$(grep -in 'project(TDLib' CMakeLists.txt| egrep -o '([0-9]{1,}\.)+[0-9]{1,}')"
