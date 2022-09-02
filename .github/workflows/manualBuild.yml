@@ -17,7 +17,7 @@ jobs:
       release_id: ${{ steps.create_release.outputs.id }}
     steps:
       - name: Checkout tdLib repo
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3.0.2
         with:
           ref: ${{ github.event.inputs.tdSha }}
           repository: tdlib/td
@@ -33,8 +33,8 @@ jobs:
         id: ver
         run: |
           cd td/telegram
-          echo 'grep -in TDLIB_VERSION Td.h | egrep -o "([0-9]{1,}\.)+[0-9]{1,}"'
-          echo "::set-output name=td_version::$(grep -in TDLIB_VERSION Td.h | egrep -o '([0-9]{1,}\.)+[0-9]{1,}')"
+          echo 'grep -in project\(TDLib CMakeLists.txt | egrep -o "([0-9]{1,}\.)+[0-9]{1,}"'
+          echo "::set-output name=td_version::$(grep -in project\(TDLib CMakeLists.txt| egrep -o '([0-9]{1,}\.)+[0-9]{1,}')"
         
       - name: Create release
         id: create_release
@@ -55,12 +55,12 @@ jobs:
       - name: Print release id
         run: echo "${{ steps.create_release.outputs.id }}"
           
-  linux:
+  linux_20_04:
     runs-on: ubuntu-20.04
     needs: create_release
     steps:
       - name: Checkout tdLib repo
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3.0.2
         with:
           ref: ${{ github.event.inputs.tdSha }}
           repository: tdlib/td
@@ -93,7 +93,7 @@ jobs:
           cp /usr/lib/x86_64-linux-gnu/libz.so ../binaryR
           
       - name: Upload artifact
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3.1.0
         with:
           retention-days: 5
           name: TDLib-x64-ubuntu-20.04
@@ -106,7 +106,7 @@ jobs:
           dest: libs.zip
           
       - name: Upload release assets
-        uses: actions/upload-release-asset@v1
+        uses: actions/upload-release-asset@v1.0.2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
@@ -114,19 +114,79 @@ jobs:
           asset_name: TDLib-x64-ubuntu-20.04.zip
           asset_path: ${{ github.workspace }}/libs.zip
           asset_content_type: application/octet-stream
-      
+
+  linux_22_04:
+    runs-on: ubuntu-22.04
+    needs: create_release
+    steps:
+      - name: Checkout tdLib repo
+        uses: actions/checkout@v3.0.2
+        with:
+          ref: ${{ github.event.inputs.tdSha }}
+          repository: tdlib/td
+    
+      - name: Install packages
+        run: |
+          sudo apt-get update
+          sudo apt-get upgrade -y
+          sudo apt-get install -y make git zlib1g-dev libssl-dev gperf php-cli cmake clang-14 libc++-dev libc++abi-dev
+          
+      - name: Configure
+        env:
+          CC: /usr/bin/clang-14
+          CXX: /usr/bin/clang++-14
+          CXXFLAGS: -stdlib=libc++
+        run: |
+          mkdir build
+          cd build
+          cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX:PATH=../tdlib ..
+          
+      - name: Build
+        run: |
+          cd build
+          cmake --build . --target install
+          mkdir ../binaryR
+          cp ../td/generate/scheme/td_api.tl ../binaryR
+          cp libtdjson.so ../binaryR
+          cp /usr/lib/x86_64-linux-gnu/libcrypto.so ../binaryR
+          cp /usr/lib/x86_64-linux-gnu/libssl.so ../binaryR
+          cp /usr/lib/x86_64-linux-gnu/libz.so ../binaryR
+          
+      - name: Upload artifact
+        uses: actions/upload-artifact@v3.1.0
+        with:
+          retention-days: 5
+          name: TDLib-x64-ubuntu-22.04
+          path: binaryR
+          
+      - name: Make zip file
+        uses: vimtor/action-zip@v1
+        with:
+          files: binaryR
+          dest: libs.zip
+          
+      - name: Upload release assets
+        uses: actions/upload-release-asset@v1.0.2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ needs.create_release.outputs.upload_url }}
+          asset_name: TDLib-x64-ubuntu-22.04.zip
+          asset_path: ${{ github.workspace }}/libs.zip
+          asset_content_type: application/octet-stream
+
   windows:
     runs-on: windows-2019
     needs: create_release
     steps:
       - name: Checkout tdLib repo
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3.0.2
         with:
           ref: ${{ github.event.inputs.tdSha }}
           repository: tdlib/td
     
       - name: Cache vcpkg
-        uses: actions/cache@v2
+        uses: actions/cache@v3.0.8
         with:
           path: 'C:/vcpkg/installed'
           key: vcpkg-windows-2019-
@@ -135,7 +195,7 @@ jobs:
             
       - name: Install packages
         run: |
-          vcpkg install gperf:x64-windows openssl:x64-windows zlib:x64-windows
+          vcpkg install gperf:x64-windows-static openssl:x64-windows-static zlib:x64-windows-static
           
       - name: Configure
         shell: cmd
@@ -152,13 +212,13 @@ jobs:
           cmake --build . --target install --config Release
           mkdir ..\binaryR
           copy ..\td\generate\scheme\td_api.tl ..\binaryR
-          copy Release\libcrypto-1_1-x64.dll ..\binaryR
-          copy Release\libssl-1_1-x64.dll ..\binaryR
+          copy Release\libcrypto-3-x64.dll ..\binaryR
+          copy Release\libssl-3-x64.dll..\binaryR
           copy Release\tdjson.dll ..\binaryR
           copy Release\zlib1.dll ..\binaryR
           
       - name: Upload artifact
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3.1.0
         with:
           retention-days: 5
           name: TDLib-x64-windows-2019
@@ -171,7 +231,7 @@ jobs:
           dest: libs.zip
           
       - name: Upload release assets
-        uses: actions/upload-release-asset@v1
+        uses: actions/upload-release-asset@v1.0.2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
@@ -180,18 +240,18 @@ jobs:
           asset_path: ${{ github.workspace }}/libs.zip
           asset_content_type: application/octet-stream
           
-  macos:
+  macos_10_15:
     runs-on: macos-10.15
     needs: create_release
     steps:
       - name: Checkout tdLib repo
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3.0.2
         with:
           ref: ${{ github.event.inputs.tdSha }}
           repository: tdlib/td
 
       - name: Configure Homebrew cache
-        uses: actions/cache@v2
+        uses: actions/cache@v3.0.8
         with:
           path: |
             ~/Library/Caches/Homebrew/foo--*
@@ -222,7 +282,7 @@ jobs:
           cp /usr/local/opt/readline/lib/libreadline.dylib ../binaryR
           
       - name: Upload artifact
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3.1.0
         with:
           retention-days: 5
           name: TDLib-x64-macos-10.15
@@ -235,7 +295,7 @@ jobs:
           dest: libs.zip
           
       - name: Upload release assets
-        uses: actions/upload-release-asset@v1
+        uses: actions/upload-release-asset@v1.0.2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
@@ -244,12 +304,76 @@ jobs:
           asset_path: ${{ github.workspace }}/libs.zip
           asset_content_type: application/octet-stream
 
+  macos_11:
+    runs-on: macos-11
+    needs: create_release
+    steps:
+      - name: Checkout tdLib repo
+        uses: actions/checkout@v3.0.2
+        with:
+          ref: ${{ github.event.inputs.tdSha }}
+          repository: tdlib/td
+
+      - name: Configure Homebrew cache
+        uses: actions/cache@v3.0.8
+        with:
+          path: |
+            ~/Library/Caches/Homebrew/foo--*
+            ~/Library/Caches/Homebrew/downloads/*--foo-*
+          key: brew-${{ needs.create_release.outputs.sha_short }} #tmp key
+          restore-keys: brew-
+        
+      - name: Install packages
+        run: brew install gperf cmake openssl
+          
+      - name: Configure
+        run: |
+          mkdir build
+          cd build
+          cmake -DCMAKE_BUILD_TYPE=Release -DOPENSSL_ROOT_DIR=/usr/local/opt/openssl/ -DCMAKE_INSTALL_PREFIX:PATH=../tdlib ..
+          
+      - name: Build
+        run: |
+          cd build
+          cmake --build . --target install
+          mkdir ../binaryR
+          cp ../td/generate/scheme/td_api.tl ../binaryR
+          cp ../tdlib/lib/libtdjson.dylib ../binaryR
+          cp ../tdlib/lib/libtdjson.${{ needs.create_release.outputs.td_version }}.dylib ../binaryR
+          cp /usr/local/opt/openssl/lib/libcrypto.dylib ../binaryR
+          cp /usr/local/opt/openssl@3/lib/libcrypto.3.dylib ../binaryR
+          cp /usr/local/opt/openssl/lib/libssl.dylib ../binaryR
+          cp /usr/local/opt/readline/lib/libreadline.dylib ../binaryR
+          
+      - name: Upload artifact
+        uses: actions/upload-artifact@v3.1.0
+        with:
+          retention-days: 5
+          name: TDLib-x64-macos-11
+          path: binaryR
+          
+      - name: Make zip file
+        uses: vimtor/action-zip@v1
+        with:
+          files: binaryR
+          dest: libs.zip
+          
+      - name: Upload release assets
+        uses: actions/upload-release-asset@v1.0.2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ needs.create_release.outputs.upload_url }}
+          asset_name: TDLib-x64-macos-11.zip
+          asset_path: ${{ github.workspace }}/libs.zip
+          asset_content_type: application/octet-stream
+
   publish_release:
     name: Publish release
     runs-on: ubuntu-latest
-    needs: [create_release, linux, windows, macos]
+    needs: [create_release, linux_20_04, linux_22_04, windows, macos_10_15, macos_11]
     steps:
-    - uses: eregon/publish-release@v1
+    - uses: eregon/publish-release@v1.0.4
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:

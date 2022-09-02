@@ -36,8 +36,8 @@ jobs:
         id: ver
         run: |
           cd td/telegram
-          echo 'grep -in TDLIB_VERSION Td.h | egrep -o "([0-9]{1,}\.)+[0-9]{1,}"'
-          echo "::set-output name=td_version::$(grep -in TDLIB_VERSION Td.h | egrep -o '([0-9]{1,}\.)+[0-9]{1,}')"
+          echo 'grep -in project\(TDLib CMakeLists.txt | egrep -o "([0-9]{1,}\.)+[0-9]{1,}"'
+          echo "::set-output name=td_version::$(grep -in project\(TDLib CMakeLists.txt| egrep -o '([0-9]{1,}\.)+[0-9]{1,}')"
 
       - name: Getting latest binares version
         id: tdPebuilt
