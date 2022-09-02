@@ -36,10 +36,8 @@ jobs:
           echo "files: $(ls -al)"
           cd td
           echo "files: $(ls -al)"
-          echo "line of file: $(grep -in 'project(TDLib' CMakeLists.txt| egrep -o '([0-9]{1,}\.)+[0-9]{1,}')"
-          echo "version: $(grep -in 'project(TDLib' CMakeLists.txt)"
-          echo 'grep -in "project(TDLib" CMakeLists.txt | egrep -o "([0-9]{1,}\.)+[0-9]{1,}"'
-          echo grep -in 'project(TDLib' CMakeLists.txt| egrep -o '([0-9]{1,}\.)+[0-9]{1,}'
+          echo "line of file: $(grep -in 'project(TDLib' CMakeLists.txt)"
+          echo "version: $(grep -in 'project(TDLib' CMakeLists.txt| egrep -o '([0-9]{1,}\.)+[0-9]{1,}')"
           echo "::set-output name=td_version::$(grep -in 'project(TDLib' CMakeLists.txt| egrep -o '([0-9]{1,}\.)+[0-9]{1,}')"
         
       - name: Create release
