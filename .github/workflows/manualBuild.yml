@@ -21,6 +21,7 @@ jobs:
         with:
           ref: ${{ github.event.inputs.tdSha }}
           repository: tdlib/td
+          path: td
       
       - name: Set outputs
         id: vars
