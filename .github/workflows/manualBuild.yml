@@ -193,7 +193,7 @@ jobs:
         uses: actions/cache@v3.0.8
         with:
           path: 'C:/vcpkg/installed'
-          key: vcpkg-windows-2019-
+          key: vcpkg-windows-2019-static
           restore-keys: |
             vcpkg-windows-2019-static
             
