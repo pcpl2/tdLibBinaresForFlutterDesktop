@@ -195,7 +195,7 @@ jobs:
           path: 'C:/vcpkg/installed'
           key: vcpkg-windows-2019-
           restore-keys: |
-            vcpkg-windows-2019-
+            vcpkg-windows-2019-static
             
       - name: Install packages
         run: |
@@ -217,7 +217,7 @@ jobs:
           mkdir ..\binaryR
           copy ..\td\generate\scheme\td_api.tl ..\binaryR
           copy Release\libcrypto-3-x64.dll ..\binaryR
-          copy Release\libssl-3-x64.dll..\binaryR
+          copy Release\libssl-3-x64.dll ..\binaryR
           copy Release\tdjson.dll ..\binaryR
           copy Release\zlib1.dll ..\binaryR
           
