@@ -193,13 +193,13 @@ jobs:
         uses: actions/cache@v3.0.8
         with:
           path: 'C:/vcpkg/installed'
-          key: vcpkg-windows-2019-static
+          key: vcpkg-windows-2019
           restore-keys: |
-            vcpkg-windows-2019-static
+            vcpkg-windows-2019
             
       - name: Install packages
         run: |
-          vcpkg install gperf:x64-windows-static openssl:x64-windows-static zlib:x64-windows-static
+          vcpkg install gperf:x64-windows openssl:x64-windows zlib:x64-windows
           
       - name: Configure
         shell: cmd
