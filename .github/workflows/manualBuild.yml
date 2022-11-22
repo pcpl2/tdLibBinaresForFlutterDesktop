@@ -17,7 +17,7 @@ jobs:
       release_id: ${{ steps.create_release.outputs.id }}
     steps:
       - name: Checkout tdLib repo
-        uses: actions/checkout@v3.0.2
+        uses: actions/checkout@v3.1.0
         with:
           ref: ${{ github.event.inputs.tdSha }}
           repository: tdlib/td
@@ -62,6 +62,7 @@ jobs:
     
   BuildLinux:
     needs: create_release
+    name: Build Linux
     uses: pcpl2/tdLibBinaresForFlutterDesktop/.github/workflows/BuildOnLinux.yml@main
     with:
       tdSha: ${{ github.event.inputs.tdSha }}
@@ -71,204 +72,24 @@ jobs:
 
   BuildmacOS:
     needs: create_release
+    name: Build macOS
     uses: pcpl2/tdLibBinaresForFlutterDesktop/.github/workflows/BuildOnMac.yml@main
     with:
       tdSha: ${{ github.event.inputs.tdSha }}
     secrets:
       uploadUrl: ${{ needs.create_release.outputs.upload_url }}
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-#  windows:
-#    runs-on: windows-2019
-#    needs: create_release
-#    steps:
-#      - name: Checkout tdLib repo
-#        uses: actions/checkout@v3.0.2
-#        with:
-#          ref: ${{ github.event.inputs.tdSha }}
-#          repository: tdlib/td
-#    
-#      - name: Cache vcpkg
-#        uses: actions/cache@v3.0.8
-#        with:
-#          path: 'C:/vcpkg/installed'
-#          key: vcpkg-windows-2019
-#          restore-keys: |
-#            vcpkg-windows-2019
-#            
-#      - name: Install packages
-#        run: |
-#          vcpkg install gperf:x64-windows openssl:x64-windows zlib:x64-windows
+
+  BuildWindows:
+    needs: create_release
+    name: Build Windows
+    uses: pcpl2/tdLibBinaresForFlutterDesktop/.github/workflows/BuildOnWindows.yml@main
+    with:
+      tdSha: ${{ github.event.inputs.tdSha }}
+    secrets:
+      uploadUrl: ${{ needs.create_release.outputs.upload_url }}
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 #          
-#      - name: Configure
-#        shell: cmd
-#        run: |
-#          mkdir build
-#          cd build
-#          call "C:/Program Files (x86)/Microsoft Visual Studio/2019/Enterprise/VC/Auxiliary/Build/vcvars64.bat"
-#          cmake -A x64 -DCMAKE_INSTALL_PREFIX:PATH=../tdlib -DCMAKE_TOOLCHAIN_FILE:FILEPATH=C:/vcpkg/scripts/buildsystems/vcpkg.cmake ..
-#          
-#      - name: Build
-#        shell: cmd
-#        run: |
-#          cd build
-#          cmake --build . --target install --config Release
-#          mkdir ..\binaryR
-#          copy ..\td\generate\scheme\td_api.tl ..\binaryR
-#          copy Release\libcrypto-3-x64.dll ..\binaryR
-#          copy Release\libssl-3-x64.dll ..\binaryR
-#          copy Release\tdjson.dll ..\binaryR
-#          copy Release\zlib1.dll ..\binaryR
-#          
-#      - name: Upload artifact
-#        uses: actions/upload-artifact@v3.1.0
-#        with:
-#          retention-days: 5
-#          name: TDLib-x64-windows-2019
-#          path: binaryR
-#          
-#      - name: Make zip file
-#        uses: vimtor/action-zip@v1
-#        with:
-#          files: binaryR
-#          dest: libs.zip
-#          
-#      - name: Upload release assets
-#        uses: actions/upload-release-asset@v1.0.2
-#        env:
-#          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-#        with:
-#          upload_url: ${{ needs.create_release.outputs.upload_url }}
-#          asset_name: TDLib-x64-windows-2019.zip
-#          asset_path: ${{ github.workspace }}/libs.zip
-#          asset_content_type: application/octet-stream
-#          
-#  macos_10_15:
-#    runs-on: macos-10.15
-#    needs: create_release
-#    steps:
-#      - name: Checkout tdLib repo
-#        uses: actions/checkout@v3.0.2
-#        with:
-#          ref: ${{ github.event.inputs.tdSha }}
-#          repository: tdlib/td
-#
-#      - name: Configure Homebrew cache
-#        uses: actions/cache@v3.0.8
-#        with:
-#          path: |
-#            ~/Library/Caches/Homebrew/foo--*
-#            ~/Library/Caches/Homebrew/downloads/*--foo-*
-#          key: brew-${{ needs.create_release.outputs.sha_short }} #tmp key
-#          restore-keys: brew-
-#        
-#      - name: Install packages
-#        run: brew install gperf cmake openssl
-#          
-#      - name: Configure
-#        run: |
-#          mkdir build
-#          cd build
-#          cmake -DCMAKE_BUILD_TYPE=Release -DOPENSSL_ROOT_DIR=/usr/local/opt/openssl/ -DCMAKE_INSTALL_PREFIX:PATH=../tdlib ..
-#          
-#      - name: Build
-#        run: |
-#          cd build
-#          cmake --build . --target install
-#          mkdir ../binaryR
-#          cp ../td/generate/scheme/td_api.tl ../binaryR
-#          cp ../tdlib/lib/libtdjson.dylib ../binaryR
-#          cp ../tdlib/lib/libtdjson.${{ needs.create_release.outputs.td_version }}.dylib ../binaryR
-#          cp /usr/local/opt/openssl/lib/libcrypto.dylib ../binaryR
-#          cp /usr/local/opt/openssl@3/lib/libcrypto.3.dylib ../binaryR
-#          cp /usr/local/opt/openssl/lib/libssl.dylib ../binaryR
-#          cp /usr/local/opt/readline/lib/libreadline.dylib ../binaryR
-#          
-#      - name: Upload artifact
-#        uses: actions/upload-artifact@v3.1.0
-#        with:
-#          retention-days: 5
-#          name: TDLib-x64-macos-10.15
-#          path: binaryR
-#          
-#      - name: Make zip file
-#        uses: vimtor/action-zip@v1
-#        with:
-#          files: binaryR
-#          dest: libs.zip
-#          
-#      - name: Upload release assets
-#        uses: actions/upload-release-asset@v1.0.2
-#        env:
-#          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-#        with:
-#          upload_url: ${{ needs.create_release.outputs.upload_url }}
-#          asset_name: TDLib-x64-macos-10.15.zip
-#          asset_path: ${{ github.workspace }}/libs.zip
-#          asset_content_type: application/octet-stream
-#
-#  macos_11:
-#    runs-on: macos-11
-#    needs: create_release
-#    steps:
-#      - name: Checkout tdLib repo
-#        uses: actions/checkout@v3.0.2
-#        with:
-#          ref: ${{ github.event.inputs.tdSha }}
-#          repository: tdlib/td
-#
-#      - name: Configure Homebrew cache
-#        uses: actions/cache@v3.0.8
-#        with:
-#          path: |
-#            ~/Library/Caches/Homebrew/foo--*
-#            ~/Library/Caches/Homebrew/downloads/*--foo-*
-#          key: brew-${{ needs.create_release.outputs.sha_short }} #tmp key
-#          restore-keys: brew-
-#        
-#      - name: Install packages
-#        run: brew install gperf cmake openssl
-#          
-#      - name: Configure
-#        run: |
-#          mkdir build
-#          cd build
-#          cmake -DCMAKE_BUILD_TYPE=Release -DOPENSSL_ROOT_DIR=/usr/local/opt/openssl/ -DCMAKE_INSTALL_PREFIX:PATH=../tdlib ..
-#          
-#      - name: Build
-#        run: |
-#          cd build
-#          cmake --build . --target install
-#          mkdir ../binaryR
-#          cp ../td/generate/scheme/td_api.tl ../binaryR
-#          cp ../tdlib/lib/libtdjson.dylib ../binaryR
-#          cp ../tdlib/lib/libtdjson.${{ needs.create_release.outputs.td_version }}.dylib ../binaryR
-#          cp /usr/local/opt/openssl/lib/libcrypto.dylib ../binaryR
-#          cp /usr/local/opt/openssl@3/lib/libcrypto.3.dylib ../binaryR
-#          cp /usr/local/opt/openssl/lib/libssl.dylib ../binaryR
-#          cp /usr/local/opt/readline/lib/libreadline.dylib ../binaryR
-#          
-#      - name: Upload artifact
-#        uses: actions/upload-artifact@v3.1.0
-#        with:
-#          retention-days: 5
-#          name: TDLib-x64-macos-11
-#          path: binaryR
-#          
-#      - name: Make zip file
-#        uses: vimtor/action-zip@v1
-#        with:
-#          files: binaryR
-#          dest: libs.zip
-#          
-#      - name: Upload release assets
-#        uses: actions/upload-release-asset@v1.0.2
-#        env:
-#          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-#        with:
-#          upload_url: ${{ needs.create_release.outputs.upload_url }}
-#          asset_name: TDLib-x64-macos-11.zip
-#          asset_path: ${{ github.workspace }}/libs.zip
-#          asset_content_type: application/octet-stream
 #
 #  publish_release:
 #    name: Publish release

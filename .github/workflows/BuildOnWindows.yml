@@ -1,0 +1,79 @@
+name: 📦 Make Windows release
+
+on: 
+  workflow_call:
+    inputs:
+      tdSha:
+        required: false
+        type: string
+    secrets:
+      uploadUrl:
+        required: true
+      GH_TOKEN:
+        required: true
+
+jobs:
+  macOS-Build:
+    name: Build on Windows ${{ matrix.osVersion }}
+    strategy:
+      matrix:
+        include:
+        - os: windows-2022
+          osVersion: 2022
+        - os: windows-2019
+          osVersion: 2019
+
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Checkout tdLib repo
+        uses: actions/checkout@v3.1.0
+        with:
+          ref: ${{ inputs.tdSha }}
+          repository: tdlib/td
+
+      - name: Cache vcpkg
+        uses: actions/cache@v3.0.11
+        with:
+          path: 'C:/vcpkg/installed'
+          key: vcpkg-windows-${{ matrix.os }}
+          restore-keys: vcpkg-windows-${{ matrix.os }}
+          
+      - name: Install packages
+        if: steps.cache.outputs.cache-hit != 'true'
+        run: vcpkg install gperf:x64-windows openssl:x64-windows zlib:x64-windows
+      
+      - name: Configure & Build
+        shell: cmd
+        run: |
+          mkdir build
+          cd build
+          call "C:/Program Files (x86)/Microsoft Visual Studio/2019/Enterprise/VC/Auxiliary/Build/vcvars64.bat"
+          cmake -A x64 -DCMAKE_INSTALL_PREFIX:PATH=../tdlib -DCMAKE_TOOLCHAIN_FILE:FILEPATH=C:/vcpkg/scripts/buildsystems/vcpkg.cmake ..
+          cmake --build . --target install --config Release
+
+          mkdir ../binaryR
+          copy ..\td\generate\scheme\td_api.tl ..\binaryR
+          copy Release\libcrypto-3-x64.dll ..\binaryR
+          copy Release\libssl-3-x64.dll ..\binaryR
+          copy Release\tdjson.dll ..\binaryR
+          copy Release\zlib1.dll ..\binaryR
+          
+      - name: Upload artifact
+        uses: actions/upload-artifact@v3.1.1
+        with:
+          retention-days: 5
+          name: TDLib-x64-Windows-${{ matrix.osVersion }}
+          path: binaryR
+
+      - name: Make zip file
+        run: 7z a TDLib-x64-Windows-${{ matrix.osVersion }}.zip binaryR/*
+          
+      - name: Upload release assets
+        uses: actions/upload-release-asset@v1.0.2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
+        with:
+          upload_url: ${{ secrets.uploadUrl }}
+          asset_name: TDLib-x64-Windows-${{ matrix.osVersion }}.zip
+          asset_path: ${{ github.workspace }}/TDLib-x64-Windows-${{ matrix.osVersion }}.zip
+          asset_content_type: application/octet-stream
