@@ -48,10 +48,6 @@ jobs:
         run: brew install gperf cmake openssl
       
       - name: Configure & Build
-        env:
-          CC: /usr/bin/clang-${{ matrix.clang }}
-          CXX: /usr/bin/clang++-${{ matrix.clang }}
-          CXXFLAGS: -stdlib=libc++
         run: |
           mkdir build
           cd build
