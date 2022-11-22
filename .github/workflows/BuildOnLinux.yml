@@ -1,0 +1,80 @@
+
+
+name: 📦 Make linux release
+
+on: 
+  workflow_call:
+    inputs:
+      tdSha:
+        required: false
+        type: string
+    secrets:
+      uploadUrl:
+        required: true
+      GITHUB_TOKEN:
+        required: true
+
+jobs:
+  linuxBuild:
+    name: Build on Ubuntu ${{ matrix.osVersion }}
+    strategy:
+      matrix:
+        include:
+        - clang: 14
+          os: ubuntu-22.04
+          osVersion: 22.04
+        - clang: 10
+          os: ubuntu-20.04
+          osVersion: 22.04
+
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Checkout tdLib repo
+        uses: actions/checkout@v3.1.0
+        with:
+          ref: ${{ inputs.tdSha }}
+          repository: tdlib/td
+          
+      - name: Install packages from apt
+        uses: awalsh128/cache-apt-pkgs-action@v1.1.3
+        with:
+          packages: make git zlib1g-dev libssl-dev gperf php-cli cmake clang-${{ matrix.clang }} libc++-dev libc++abi-dev
+          version: 1.0
+      
+      - name: Configure & Build
+        env:
+          CC: /usr/bin/clang-${{ matrix.clang }}
+          CXX: /usr/bin/clang++-${{ matrix.clang }}
+          CXXFLAGS: -stdlib=libc++
+        run: |
+          mkdir build
+          cd build
+          cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX:PATH=../tdlib ..
+          cmake --build . --target install
+
+          mkdir ../binaryR
+          cp ../td/generate/scheme/td_api.tl ../binaryR
+          cp libtdjson.so ../binaryR
+          cp /usr/lib/x86_64-linux-gnu/libcrypto.so ../binaryR
+          cp /usr/lib/x86_64-linux-gnu/libssl.so ../binaryR
+          cp /usr/lib/x86_64-linux-gnu/libz.so ../binaryR
+          
+      - name: Upload artifact
+        uses: actions/upload-artifact@v3.1.1
+        with:
+          retention-days: 5
+          name: TDLib-x64-ubuntu-${{ matrix.osVersion }}
+          path: binaryR
+
+      - name: Make zip file
+        run: zip -j TDLib-x64-ubuntu-${{ matrix.osVersion }}.zip binaryR/*
+          
+      - name: Upload release assets
+        uses: actions/upload-release-asset@v1.0.2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ secrets.uploadUrl }}
+          asset_name: TDLib-x64-ubuntu-${{ matrix.osVersion }}.zip
+          asset_path: ${{ github.workspace }}/libs.zip
+          asset_content_type: application/octet-stream
