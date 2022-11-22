@@ -11,7 +11,7 @@ on:
     secrets:
       uploadUrl:
         required: true
-      GITHUB_TOKEN:
+      GH_TOKEN:
         required: true
 
 jobs:
@@ -72,7 +72,7 @@ jobs:
       - name: Upload release assets
         uses: actions/upload-release-asset@v1.0.2
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
         with:
           upload_url: ${{ secrets.uploadUrl }}
           asset_name: TDLib-x64-ubuntu-${{ matrix.osVersion }}.zip
