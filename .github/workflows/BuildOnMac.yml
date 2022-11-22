@@ -1,0 +1,88 @@
+name: 📦 Make macOS release
+
+on: 
+  workflow_call:
+    inputs:
+      tdSha:
+        required: false
+        type: string
+    secrets:
+      uploadUrl:
+        required: true
+      GH_TOKEN:
+        required: true
+
+jobs:
+  macOS-Build:
+    name: Build on macOS ${{ matrix.osVersion }}
+    strategy:
+      matrix:
+        include:
+        - os: macos-12
+          osVersion: 12
+        - os: macos-11
+          osVersion: 11
+        - os: macos-10.15
+          osVersion: 10.5
+
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Checkout tdLib repo
+        uses: actions/checkout@v3.1.0
+        with:
+          ref: ${{ inputs.tdSha }}
+          repository: tdlib/td
+
+      - name: Configure Homebrew cache
+        id: cache
+        uses: actions/cache@v3.0.11
+        with:
+          path: |
+            ~/Library/Caches/Homebrew/foo--*
+            ~/Library/Caches/Homebrew/downloads/*--foo-*
+          key: brew-${{ matrix.os }}-
+          restore-keys: brew-${{ matrix.os }}-
+          
+      - name: Install packages
+        if: steps.cache.outputs.cache-hit != 'true'
+        run: brew install gperf cmake openssl
+      
+      - name: Configure & Build
+        env:
+          CC: /usr/bin/clang-${{ matrix.clang }}
+          CXX: /usr/bin/clang++-${{ matrix.clang }}
+          CXXFLAGS: -stdlib=libc++
+        run: |
+          mkdir build
+          cd build
+          cmake -DCMAKE_BUILD_TYPE=Release -DOPENSSL_ROOT_DIR=/usr/local/opt/openssl/ -DCMAKE_INSTALL_PREFIX:PATH=../tdlib ..
+          cmake --build . --target install
+
+          mkdir ../binaryR
+          cp ../td/generate/scheme/td_api.tl ../binaryR
+          cp ../tdlib/lib/libtdjson.dylib ../binaryR
+          cp ../tdlib/lib/libtdjson.${{ needs.create_release.outputs.td_version }}.dylib ../binaryR
+          cp /usr/local/opt/openssl/lib/libcrypto.dylib ../binaryR
+          cp /usr/local/opt/openssl@3/lib/libcrypto.3.dylib ../binaryR
+          cp /usr/local/opt/openssl/lib/libssl.dylib ../binaryR
+          cp /usr/local/opt/readline/lib/libreadline.dylib ../binaryR
+          
+      - name: Upload artifact
+        uses: actions/upload-artifact@v3.1.1
+        with:
+          retention-days: 5
+          name: TDLib-x64-macOS-${{ matrix.osVersion }}
+          path: binaryR
+
+      - name: Make zip file
+        run: zip -j TDLib-x64-macOS-${{ matrix.osVersion }}.zip binaryR/*
+          
+      - name: Upload release assets
+        uses: actions/upload-release-asset@v1.0.2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
+        with:
+          upload_url: ${{ secrets.uploadUrl }}
+          asset_name: TDLib-x64-macOS-${{ matrix.osVersion }}.zip
+          asset_path: ${{ github.workspace }}/TDLib-x64-macOS-${{ matrix.osVersion }}.zip
+          asset_content_type: application/octet-stream

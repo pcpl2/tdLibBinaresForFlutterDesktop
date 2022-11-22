@@ -67,126 +67,15 @@ jobs:
     secrets:
       uploadUrl: ${{ needs.create_release.outputs.upload_url }}
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-#  linux_20_04:
-#    runs-on: ubuntu-20.04
-#    needs: create_release
-#    steps:
-#      - name: Checkout tdLib repo
-#        uses: actions/checkout@v3.0.2
-#        with:
-#          ref: ${{ github.event.inputs.tdSha }}
-#          repository: tdlib/td
-#    
-#      - name: Install packages
-#        run: |
-#          sudo apt-get update
-#          sudo apt-get upgrade -y
-#          sudo apt-get install -y make git zlib1g-dev libssl-dev gperf php-cli cmake clang-10 libc++-dev libc++abi-dev
-#          
-#      - name: Configure
-#        env:
-#          CC: /usr/bin/clang-10
-#          CXX: /usr/bin/clang++-10
-#          CXXFLAGS: -stdlib=libc++
-#        run: |
-#          mkdir build
-#          cd build
-#          cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX:PATH=../tdlib ..
-#          
-#      - name: Build
-#        run: |
-#          cd build
-#          cmake --build . --target install
-#          mkdir ../binaryR
-#          cp ../td/generate/scheme/td_api.tl ../binaryR
-#          cp libtdjson.so ../binaryR
-#          cp /usr/lib/x86_64-linux-gnu/libcrypto.so ../binaryR
-#          cp /usr/lib/x86_64-linux-gnu/libssl.so ../binaryR
-#          cp /usr/lib/x86_64-linux-gnu/libz.so ../binaryR
-#          
-#      - name: Upload artifact
-#        uses: actions/upload-artifact@v3.1.0
-#        with:
-#          retention-days: 5
-#          name: TDLib-x64-ubuntu-20.04
-#          path: binaryR
-#          
-#      - name: Make zip file
-#        uses: vimtor/action-zip@v1
-#        with:
-#          files: binaryR
-#          dest: libs.zip
-#          
-#      - name: Upload release assets
-#        uses: actions/upload-release-asset@v1.0.2
-#        env:
-#          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-#        with:
-#          upload_url: ${{ needs.create_release.outputs.upload_url }}
-#          asset_name: TDLib-x64-ubuntu-20.04.zip
-#          asset_path: ${{ github.workspace }}/libs.zip
-#          asset_content_type: application/octet-stream
-#
-#  linux_22_04:
-#    runs-on: ubuntu-22.04
-#    needs: create_release
-#    steps:
-#      - name: Checkout tdLib repo
-#        uses: actions/checkout@v3.0.2
-#        with:
-#          ref: ${{ github.event.inputs.tdSha }}
-#          repository: tdlib/td
-#
-#      - name: Install packages
-#        run: |
-#          sudo apt-get update
-#          sudo apt-get upgrade -y
-#          sudo apt-get install -y make git zlib1g-dev libssl-dev gperf php-cli cmake clang-14 libc++-dev libc++abi-dev
-#          
-#      - name: Configure
-#        env:
-#          CC: /usr/bin/clang-14
-#          CXX: /usr/bin/clang++-14
-#          CXXFLAGS: -stdlib=libc++
-#        run: |
-#          mkdir build
-#          cd build
-#          cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX:PATH=../tdlib ..
-#          
-#      - name: Build
-#        run: |
-#          cd build
-#          cmake --build . --target install
-#          mkdir ../binaryR
-#          cp ../td/generate/scheme/td_api.tl ../binaryR
-#          cp libtdjson.so ../binaryR
-#          cp /usr/lib/x86_64-linux-gnu/libcrypto.so ../binaryR
-#          cp /usr/lib/x86_64-linux-gnu/libssl.so ../binaryR
-#          cp /usr/lib/x86_64-linux-gnu/libz.so ../binaryR
-#          
-#      - name: Upload artifact
-#        uses: actions/upload-artifact@v3.1.0
-#        with:
-#          retention-days: 5
-#          name: TDLib-x64-ubuntu-22.04
-#          path: binaryR
-#          
-#      - name: Make zip file
-#        uses: vimtor/action-zip@v1
-#        with:
-#          files: binaryR
-#          dest: libs.zip
-#          
-#      - name: Upload release assets
-#        uses: actions/upload-release-asset@v1.0.2
-#        env:
-#          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-#        with:
-#          upload_url: ${{ needs.create_release.outputs.upload_url }}
-#          asset_name: TDLib-x64-ubuntu-22.04.zip
-#          asset_path: ${{ github.workspace }}/libs.zip
-#          asset_content_type: application/octet-stream
-#
+
+  BuildmacOS:
+    needs: create_release
+    uses: pcpl2/tdLibBinaresForFlutterDesktop/.github/workflows/BuildOnMac.yml@main
+    with:
+      tdSha: ${{ github.event.inputs.tdSha }}
+    secrets:
+      uploadUrl: ${{ needs.create_release.outputs.upload_url }}
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 #  windows:
 #    runs-on: windows-2019
 #    needs: create_release
