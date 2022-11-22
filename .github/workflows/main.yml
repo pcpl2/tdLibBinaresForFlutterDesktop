@@ -1,10 +1,6 @@
 name: Auto build TDLib
 on:
-#  workflow_dispatch:
-#      inputs:
-#        version:
-#          description: 'Not uset (only for test)'
-#          required: false
+  workflow_dispatch:
   schedule:
     - cron: "0 10 * * *" # every day at 1 pm
 
@@ -15,252 +11,120 @@ jobs:
     outputs:
       upload_url: ${{ steps.create_release.outputs.upload_url }}
       sha_short: ${{ steps.vars.outputs.sha_short }}
-      td_version: ${{ steps.ver.outputs.td_version }}
-      td_sha: ${{ steps.vars.outputs.td_sha }}
+      td_version: ${{ steps.vars.outputs.td_version }}
+      td_sha: ${{ steps.update.outputs.updateHash }}
       release_id: ${{ steps.create_release.outputs.id }}
     steps:
-      - name: Checkout tdLib repo
-        uses: actions/checkout@v2
-        with:
-          repository: tdlib/td
-      
-      - name: Set outputs
-        id: vars
-        run: |
-          echo "::set-output name=sha_short::$(git rev-parse --short HEAD)"
-          echo "::set-output name=td_sha::$(git rev-parse HEAD)"
-          echo "::set-output name=td_commit_date::$(git show -s --date=format:'%d-%m-%Y %H:%M' --format=%cd)"
-          echo "::set-output name=date::$(date +'%d-%m-%Y %H:%M')"
-        
-      - name: Get version
-        id: ver
-        run: |
-          cd td
-          echo 'grep -in project\(TDLib CMakeLists.txt | egrep -o "([0-9]{1,}\.)+[0-9]{1,}"'
-          echo "::set-output name=td_version::$(grep -in project\(TDLib CMakeLists.txt| egrep -o '([0-9]{1,}\.)+[0-9]{1,}')"
-
       - name: Getting latest binares version
         id: tdPebuilt
-        uses: pozetroninc/github-action-get-latest-release@master
+        uses: pozetroninc/github-action-get-latest-release@v0.6.0
         with:
           repository: pcpl2/tdLibBinaresForFlutterDesktop
           excludes: prerelease, draft
-        
-      - if: steps.ver.outputs.td_version == steps.tdPebuilt.outputs.release
-        name: cancelling
-        uses: andymckay/cancel-action@0.2
+
+      - name: Get latest release
+        id: latest_release
+        uses: cardinalby/git-get-release-action@v1
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        with:
+          repo: pcpl2/tdLibBinaresForFlutterDesktop
+          latest: true
+          prerelease: false
+          draft: false
+
+      - name: Get last tdlibBuild hash
+        id: get_lastest_hash
+        run: |
+           echo "${{ steps.tdPebuilt.outputs.id }}"
+           echo "${{ steps.latest_release.outputs.id }}"
+           echo "${{ steps.latest_release.outputs.name }}"
+           echo "${{ steps.latest_release.outputs.body }}" | grep "TDLib SHA" | awk '{ print $3 }'
+           echo "lastTdHash=$(echo "${{ steps.latest_release.outputs.body }}" | grep "TDLib SHA" | awk '{ print $3 }')" >> $GITHUB_OUTPUT
+      
+      - name: Checkout tdLib repo
+        uses: actions/checkout@v3.1.0
+        with:
+          repository: tdlib/td
+          path: td
+          fetch-depth: 0
+
+      - name: Get tdlib updates
+        id: update
+        run: |
+          cd td
+          echo "files: $(ls -al)"
+          echo "version: $(grep -in 'project(TDLib' CMakeLists.txt| egrep -o '([0-9]{1,}\.)+[0-9]{1,}')"
+          echo $(git log --pretty=oneline ${{ steps.get_lastest_hash.outputs.lastTdHash }}..HEAD | awk '!/^$/' | grep "Update version to" | awk 'END{ print $1 }')
+          echo "updateHash=$(git log --pretty=oneline ${{ steps.get_lastest_hash.outputs.lastTdHash }}..HEAD | awk '!/^$/' | grep "Update version to" | awk 'END{ print $1 }')" >> $GITHUB_OUTPUT
+
+      - if: steps.update.outputs.updateHash == ''
+        name: Cancelling => Not found newer version
+        uses: andymckay/cancel-action@0.3
+
+      - name: Checkout and get version
+        if: steps.update.outputs.updateHash != ''
+        id: vars
+        run: |
+           echo "${{ steps.update.outputs.updateHash }}"
+           cd td 
+           git checkout ${{ steps.update.outputs.updateHash }}
+           echo "td_version=$(grep -in 'project(TDLib' CMakeLists.txt| egrep -o '([0-9]{1,}\.)+[0-9]{1,}')" >> $GITHUB_OUTPUT
+           echo "sha_short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+           echo "td_commit_date=$(git show -s --date=format:'%d-%m-%Y %H:%M' --format=%cd)" >> $GITHUB_OUTPUT
+           echo "date=$(date +'%d-%m-%Y %H:%M')" >> $GITHUB_OUTPUT
 
       - name: Create release
         id: create_release
+        if: steps.update.outputs.updateHash != ''
         uses: softprops/action-gh-release@v1
         with:
           body: |
               TDLib commit date: ${{ steps.vars.outputs.td_commit_date }}
-              TDLib SHA: ${{ github.event.inputs.tdSha }}
+              TDLib SHA: ${{ steps.update.outputs.updateHash }}
               Build date: ${{ steps.vars.outputs.date }}
           name: '${{ steps.ver.outputs.td_version }}'
           tag_name: '${{ steps.ver.outputs.td_version }}'
           draft: true
           prerelease: false
+          
+  BuildLinux:
+    needs: create_release
+    name: Build Linux
+    uses: pcpl2/tdLibBinaresForFlutterDesktop/.github/workflows/BuildOnLinux.yml@main
+    with:
+      tdSha: ${{ needs.create_release.outputs.td_sha }}
+    secrets:
+      uploadUrl: ${{ needs.create_release.outputs.upload_url }}
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+     
+  BuildmacOS:
+    needs: create_release
+    name: Build macOS
+    uses: pcpl2/tdLibBinaresForFlutterDesktop/.github/workflows/BuildOnMac.yml@main
+    with:
+      tdSha: ${{ needs.create_release.outputs.td_sha }}
+      tdVersion: ${{ needs.create_release.outputs.td_version }}
+    secrets:
+      uploadUrl: ${{ needs.create_release.outputs.upload_url }}
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Print url upload 
-        run: echo "${{steps.create_release.outputs.upload_url}}"
-          
-  linux:
-    runs-on: ubuntu-20.04
+  BuildWindows:
     needs: create_release
-    steps:
-      - name: Checkout tdLib repo
-        uses: actions/checkout@v2
-        with:
-          ref: ${{ needs.create_release.outputs.td_sha }}
-          repository: tdlib/td
-    
-      - name: Install packages
-        run: |
-          sudo apt-get update
-          sudo apt-get upgrade -y
-          sudo apt-get install -y make git zlib1g-dev libssl-dev gperf php-cli cmake clang-10 libc++-dev libc++abi-dev
-          
-      - name: Configure
-        env:
-          CC: /usr/bin/clang-10
-          CXX: /usr/bin/clang++-10
-          CXXFLAGS: -stdlib=libc++
-        run: |
-          mkdir build
-          cd build
-          cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX:PATH=../tdlib ..
-          
-      - name: Build
-        run: |
-          cd build
-          cmake --build . --target install
-          mkdir ../binaryR
-          cp ../td/generate/scheme/td_api.tl ../binaryR
-          cp libtdjson.so ../binaryR
-          cp /usr/lib/x86_64-linux-gnu/libcrypto.so ../binaryR
-          cp /usr/lib/x86_64-linux-gnu/libssl.so ../binaryR
-          cp /usr/lib/x86_64-linux-gnu/libz.so ../binaryR
-          
-      - name: Upload artifact
-        uses: actions/upload-artifact@v2
-        with:
-          retention-days: 5
-          name: TDLib-x64-ubuntu-20.04
-          path: binaryR
-          
-      - name: Make zip file
-        uses: vimtor/action-zip@v1
-        with:
-          files: binaryR
-          dest: libs.zip
-          
-      - name: Upload release assets
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ needs.create_release.outputs.upload_url }}
-          asset_name: TDLib-x64-ubuntu-20.04.zip
-          asset_path: ${{ github.workspace }}/libs.zip
-          asset_content_type: application/octet-stream
-      
-  windows:
-    runs-on: windows-2019
-    needs: create_release
-    steps:
-      - name: Checkout tdLib repo
-        uses: actions/checkout@v2
-        with:
-          ref: ${{ needs.create_release.outputs.td_sha }}
-          repository: tdlib/td
-    
-      - name: Cache vcpkg
-        uses: actions/cache@v2
-        with:
-          path: 'C:/vcpkg/installed'
-          key: vcpkg-windows-2019-
-          restore-keys: |
-            vcpkg-windows-2019-
-            
-      - name: Install packages
-        run: |
-          vcpkg install gperf:x64-windows openssl:x64-windows zlib:x64-windows
-          
-      - name: Configure
-        shell: cmd
-        run: |
-          mkdir build
-          cd build
-          call "C:/Program Files (x86)/Microsoft Visual Studio/2019/Enterprise/VC/Auxiliary/Build/vcvars64.bat"
-          cmake -A x64 -DCMAKE_INSTALL_PREFIX:PATH=../tdlib -DCMAKE_TOOLCHAIN_FILE:FILEPATH=C:/vcpkg/scripts/buildsystems/vcpkg.cmake ..
-          
-      - name: Build
-        shell: cmd
-        run: |
-          cd build
-          cmake --build . --target install --config Release
-          mkdir ..\binaryR
-          copy ..\td\generate\scheme\td_api.tl ..\binaryR
-          copy Release\libcrypto-1_1-x64.dll ..\binaryR
-          copy Release\libssl-1_1-x64.dll ..\binaryR
-          copy Release\tdjson.dll ..\binaryR
-          copy Release\zlib1.dll ..\binaryR
-          
-      - name: Upload artifact
-        uses: actions/upload-artifact@v2
-        with:
-          retention-days: 5
-          name: TDLib-x64-windows-2019
-          path: binaryR
-          
-      - name: Make zip file
-        uses: vimtor/action-zip@v1
-        with:
-          files: binaryR
-          dest: libs.zip
-          
-      - name: Upload release assets
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ needs.create_release.outputs.upload_url }}
-          asset_name: TDLib-x64-windows-2019.zip
-          asset_path: ${{ github.workspace }}/libs.zip
-          asset_content_type: application/octet-stream
-          
-  macos:
-    runs-on: macos-10.15
-    needs: create_release
-    steps:
-      - name: Checkout tdLib repo
-        uses: actions/checkout@v2
-        with:
-          ref: ${{ needs.create_release.outputs.td_sha }}
-          repository: tdlib/td
-
-      - name: Configure Homebrew cache
-        uses: actions/cache@v2
-        with:
-          path: |
-            ~/Library/Caches/Homebrew/foo--*
-            ~/Library/Caches/Homebrew/downloads/*--foo-*
-          key: brew-${{ needs.create_release.outputs.sha_short }} #tmp key
-          restore-keys: brew-
-        
-      - name: Install packages
-        run: brew install gperf cmake openssl
-          
-      - name: Configure
-        run: |
-          mkdir build
-          cd build
-          cmake -DCMAKE_BUILD_TYPE=Release -DOPENSSL_ROOT_DIR=/usr/local/opt/openssl/ -DCMAKE_INSTALL_PREFIX:PATH=../tdlib ..
-          
-      - name: Build
-        run: |
-          cd build
-          cmake --build . --target install
-          mkdir ../binaryR
-          cp ../td/generate/scheme/td_api.tl ../binaryR
-          cp ../tdlib/lib/libtdjson.dylib ../binaryR
-          cp ../tdlib/lib/libtdjson.${{ needs.create_release.outputs.td_version }}.dylib ../binaryR
-          cp /usr/local/opt/openssl/lib/libcrypto.dylib ../binaryR
-          cp /usr/local/opt/openssl@3/lib/libcrypto.3.dylib ../binaryR
-          cp /usr/local/opt/openssl/lib/libssl.dylib ../binaryR
-          cp /usr/local/opt/readline/lib/libreadline.dylib ../binaryR
-          
-      - name: Upload artifact
-        uses: actions/upload-artifact@v2
-        with:
-          retention-days: 5
-          name: TDLib-x64-macos-10.15
-          path: binaryR
-          
-      - name: Make zip file
-        uses: vimtor/action-zip@v1
-        with:
-          files: binaryR
-          dest: libs.zip
-          
-      - name: Upload release assets
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ needs.create_release.outputs.upload_url }}
-          asset_name: TDLib-x64-macos-10.15.zip
-          asset_path: ${{ github.workspace }}/libs.zip
-          asset_content_type: application/octet-stream
+    name: Build Windows
+    uses: pcpl2/tdLibBinaresForFlutterDesktop/.github/workflows/BuildOnWindows.yml@main
+    with:
+      tdSha: ${{ needs.create_release.outputs.td_sha }}
+    secrets:
+      uploadUrl: ${{ needs.create_release.outputs.upload_url }}
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   publish_release:
     name: Publish release
     runs-on: ubuntu-latest
-    needs: [create_release, linux, windows, macos]
+    needs: [create_release, BuildLinux, BuildWindows, BuildmacOS]
     steps:
-    - uses: eregon/publish-release@v1
+    - uses: eregon/publish-release@v1.0.5
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
