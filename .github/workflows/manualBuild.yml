@@ -26,9 +26,10 @@ jobs:
       - name: Set outputs
         id: vars
         run: |
-          echo "::set-output name=sha_short::$(git rev-parse --short HEAD)"
-          echo "::set-output name=td_commit_date::$(git show -s --date=format:'%d-%m-%Y %H:%M' --format=%cd)"
-          echo "::set-output name=date::$(date +'%d-%m-%Y %H:%M')"
+          cd td
+          echo "sha_short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+          echo "td_commit_date=$(git show -s --date=format:'%d-%m-%Y %H:%M' --format=%cd)" >> $GITHUB_OUTPUT
+          echo "date=$(date +'%d-%m-%Y %H:%M')" >> $GITHUB_OUTPUT
         
       - name: Get version
         id: ver
@@ -38,7 +39,7 @@ jobs:
           echo "files: $(ls -al)"
           echo "line of file: $(grep -in 'project(TDLib' CMakeLists.txt)"
           echo "version: $(grep -in 'project(TDLib' CMakeLists.txt| egrep -o '([0-9]{1,}\.)+[0-9]{1,}')"
-          echo "::set-output name=td_version::$(grep -in 'project(TDLib' CMakeLists.txt| egrep -o '([0-9]{1,}\.)+[0-9]{1,}')"
+          echo "td_version=$(grep -in 'project(TDLib' CMakeLists.txt| egrep -o '([0-9]{1,}\.)+[0-9]{1,}')" >> $GITHUB_OUTPUT
         
       - name: Create release
         id: create_release
