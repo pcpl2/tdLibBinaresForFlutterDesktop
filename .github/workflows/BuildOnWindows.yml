@@ -16,6 +16,7 @@ jobs:
   macOS-Build:
     name: Build on Windows ${{ matrix.osVersion }}
     strategy:
+      fail-fast: false
       matrix:
         include:
         - os: windows-2022
@@ -33,23 +34,35 @@ jobs:
 
       - name: Cache vcpkg
         uses: actions/cache@v3.0.11
+        id: cache
         with:
-          path: 'C:/vcpkg/installed'
+          path: td/vcpkg
           key: vcpkg-windows-${{ matrix.os }}
           restore-keys: vcpkg-windows-${{ matrix.os }}
+
+      - name: Checkout vcpkg repo
+        if: steps.cache.outputs.cache-hit != 'true'
+        uses: actions/checkout@v3.1.0
+        with:
+          ref: 1b1ae50e1a69f7c659bd7d731e80b358d21c86ad
+          repository: Microsoft/vcpkg
+          path: vcpkg
           
       - name: Install packages
         if: steps.cache.outputs.cache-hit != 'true'
-        run: vcpkg install gperf:x64-windows openssl:x64-windows zlib:x64-windows
+        run: |
+         echo "files: $(ls -al)"
+         cd vcpkg
+         ./bootstrap-vcpkg.bat
+         ./vcpkg.exe install gperf:x64-windows openssl:x64-windows zlib:x64-windows
       
-      #          call "C:/Program Files (x86)/Microsoft Visual Studio/2019/Enterprise/VC/Auxiliary/Build/vcvars64.bat"
-
       - name: Configure & Build
         shell: cmd
         run: |
+          echo "files: $(ls -al)"
           mkdir build
           cd build
-          cmake -A x64 -DCMAKE_INSTALL_PREFIX:PATH=../tdlib -DCMAKE_TOOLCHAIN_FILE:FILEPATH=C:/vcpkg/scripts/buildsystems/vcpkg.cmake ..
+          cmake -A x64 -DCMAKE_INSTALL_PREFIX:PATH=../tdlib -DCMAKE_TOOLCHAIN_FILE:FILEPATH=../vcpkg/scripts/buildsystems/vcpkg.cmake ..
           cmake --build . --target install --config Release -j 2
 
           cd ..
@@ -59,6 +72,7 @@ jobs:
           copy tdlib\bin\libssl-3-x64.dll binaryR
           copy tdlib\bin\tdjson.dll binaryR
           copy tdlib\bin\zlib1.dll binaryR
+          echo "files: $(ls -al)"
           
       - name: Upload artifact
         uses: actions/upload-artifact@v3.1.1
