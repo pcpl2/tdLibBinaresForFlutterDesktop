@@ -50,7 +50,7 @@ jobs:
           mkdir build
           cd build
           cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX:PATH=../tdlib ..
-          cmake --build . --target install
+          cmake --build . --target install -j 2
 
           mkdir ../binaryR
           cp ../td/generate/scheme/td_api.tl ../binaryR

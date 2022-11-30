@@ -42,14 +42,15 @@ jobs:
         if: steps.cache.outputs.cache-hit != 'true'
         run: vcpkg install gperf:x64-windows openssl:x64-windows zlib:x64-windows
       
+      #          call "C:/Program Files (x86)/Microsoft Visual Studio/2019/Enterprise/VC/Auxiliary/Build/vcvars64.bat"
+
       - name: Configure & Build
         shell: cmd
         run: |
           mkdir build
           cd build
-          call "C:/Program Files (x86)/Microsoft Visual Studio/2019/Enterprise/VC/Auxiliary/Build/vcvars64.bat"
           cmake -A x64 -DCMAKE_INSTALL_PREFIX:PATH=../tdlib -DCMAKE_TOOLCHAIN_FILE:FILEPATH=C:/vcpkg/scripts/buildsystems/vcpkg.cmake ..
-          cmake --build . --target install --config Release
+          cmake --build . --target install --config Release -j 2
 
           cd ..
           mkdir binaryR
