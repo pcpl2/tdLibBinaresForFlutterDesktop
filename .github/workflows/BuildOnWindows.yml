@@ -51,7 +51,7 @@ jobs:
       - name: Install packages
         if: steps.cache.outputs.cache-hit != 'true'
         run: |
-         echo "files: $(ls -al)"
+         echo "files: $(dir)"
          cd vcpkg
          ./bootstrap-vcpkg.bat
          ./vcpkg.exe install gperf:x64-windows openssl:x64-windows zlib:x64-windows
@@ -59,7 +59,7 @@ jobs:
       - name: Configure & Build
         shell: cmd
         run: |
-          echo "files: $(ls -al)"
+          echo "files: $(dir)"
           mkdir build
           cd build
           cmake -A x64 -DCMAKE_INSTALL_PREFIX:PATH=../tdlib -DCMAKE_TOOLCHAIN_FILE:FILEPATH=../vcpkg/scripts/buildsystems/vcpkg.cmake ..
