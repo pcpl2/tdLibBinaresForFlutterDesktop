@@ -51,12 +51,13 @@ jobs:
           cmake -A x64 -DCMAKE_INSTALL_PREFIX:PATH=../tdlib -DCMAKE_TOOLCHAIN_FILE:FILEPATH=C:/vcpkg/scripts/buildsystems/vcpkg.cmake ..
           cmake --build . --target install --config Release
 
-          mkdir ../binaryR
-          copy ..\td\generate\scheme\td_api.tl ..\binaryR
-          copy Release\libcrypto-3-x64.dll ..\binaryR
-          copy Release\libssl-3-x64.dll ..\binaryR
-          copy Release\tdjson.dll ..\binaryR
-          copy Release\zlib1.dll ..\binaryR
+          cd ..
+          mkdir binaryR
+          copy td\generate\scheme\td_api.tl binaryR
+          copy tdlib\bin\libcrypto-3-x64.dll binaryR
+          copy tdlib\bin\libssl-3-x64.dll binaryR
+          copy tdlib\bin\tdjson.dll binaryR
+          copy tdlib\bin\zlib1.dll binaryR
           
       - name: Upload artifact
         uses: actions/upload-artifact@v3.1.1
@@ -66,6 +67,7 @@ jobs:
           path: binaryR
 
       - name: Make zip file
+        shell: cmd
         run: 7z a TDLib-x64-Windows-${{ matrix.osVersion }}.zip binaryR/*
           
       - name: Upload release assets
