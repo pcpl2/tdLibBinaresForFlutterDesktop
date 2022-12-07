@@ -83,7 +83,9 @@ jobs:
 
       - name: Make zip file
         shell: cmd
-        run: 7z a TDLib-x64-Windows-${{ matrix.osVersion }}.zip binaryR/*
+        run: |
+          cd binaryR
+          7z a ../TDLib-x64-Windows-${{ matrix.osVersion }}.zip *
           
       - name: Upload release assets
         uses: actions/upload-release-asset@v1.0.2
