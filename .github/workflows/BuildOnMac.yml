@@ -25,8 +25,6 @@ jobs:
           osVersion: 12
         - os: macos-11
           osVersion: 11
-        #- os: macos-10.15
-        #  osVersion: 10.5
 
     runs-on: ${{ matrix.os }}
     steps:
