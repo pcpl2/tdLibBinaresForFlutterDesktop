@@ -53,7 +53,6 @@ jobs:
         id: update
         run: |
           cd td
-          echo "files: $(ls -al)"
           echo "version: $(grep -in 'project(TDLib' CMakeLists.txt| egrep -o '([0-9]{1,}\.)+[0-9]{1,}')"
           echo $(git log --pretty=oneline ${{ steps.get_lastest_hash.outputs.lastTdHash }}..HEAD | awk '!/^$/' | grep "Update version to" | awk 'END{ print $1 }')
           echo "updateHash=$(git log --pretty=oneline ${{ steps.get_lastest_hash.outputs.lastTdHash }}..HEAD | awk '!/^$/' | grep "Update version to" | awk 'END{ print $1 }')" >> $GITHUB_OUTPUT

@@ -34,9 +34,7 @@ jobs:
       - name: Get version
         id: ver
         run: |
-          echo "files: $(ls -al)"
           cd td
-          echo "files: $(ls -al)"
           echo "line of file: $(grep -in 'project(TDLib' CMakeLists.txt)"
           echo "version: $(grep -in 'project(TDLib' CMakeLists.txt| egrep -o '([0-9]{1,}\.)+[0-9]{1,}')"
           echo "td_version=$(grep -in 'project(TDLib' CMakeLists.txt| egrep -o '([0-9]{1,}\.)+[0-9]{1,}')" >> $GITHUB_OUTPUT
