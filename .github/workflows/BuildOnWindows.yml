@@ -44,7 +44,7 @@ jobs:
         if: steps.cache.outputs.cache-hit != 'true'
         uses: actions/checkout@v3.1.0
         with:
-          #ref: 1b1ae50e1a69f7c659bd7d731e80b358d21c86ad
+          ref: 1b1ae50e1a69f7c659bd7d731e80b358d21c86ad
           repository: Microsoft/vcpkg
           path: vcpkg
           
@@ -54,7 +54,7 @@ jobs:
          echo "files: $(dir)"
          cd vcpkg
          ./bootstrap-vcpkg.bat
-         ./vcpkg.exe install gperf:x64-windows openssl:x64-windows zlib:x64-windows
+         ./vcpkg.exe install gperf:x64-windows openssl:x64-windows zlib:x64-windows readline:x64-windows
       
       - name: Configure & Build
         shell: cmd
