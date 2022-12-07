@@ -68,8 +68,8 @@ jobs:
           cd ..
           mkdir binaryR
           copy td\generate\scheme\td_api.tl binaryR
-          copy tdlib\bin\libcrypto-3-x64.dll binaryR
-          copy tdlib\bin\libssl-3-x64.dll binaryR
+          copy tdlib\bin\libcrypto-1_1-x64.dll binaryR
+          copy tdlib\bin\libssl-1_1-x64.dll binaryR
           copy tdlib\bin\tdjson.dll binaryR
           copy tdlib\bin\zlib1.dll binaryR
           echo "files: $(ls -al)"
