@@ -37,13 +37,11 @@ jobs:
       - name: Get last tdlibBuild hash
         id: get_lastest_hash
         run: |
-           echo "${{ steps.tdPebuilt.outputs.id }}"
            echo "${{ steps.latest_release.outputs.id }}"
            echo "${{ steps.latest_release.outputs.name }}"
            echo "${{ steps.latest_release.outputs.body }}" | grep "TDLib SHA" | awk '{ print $3 }'
-           echo "lastTdHash=$(echo "${{ steps.latest_release.outputs.body }}" | grep "TDLib SHA" | awk '{ print $3 }' | sed -z '$ s/\n$//')" >> $GITHUB_OUTPUT
+           echo "lastTdHash=$(echo "${{ steps.latest_release.outputs.body }}" | grep "TDLib SHA" | awk '{ print $3 }' | sed -E '$ s/\n+$//'))" >> $GITHUB_OUTPUT
            
-      
       - name: Checkout tdLib repo
         uses: actions/checkout@v3.1.0
         with:
@@ -58,7 +56,6 @@ jobs:
           echo "version: $(grep -in 'project(TDLib' CMakeLists.txt| egrep -o '([0-9]{1,}\.)+[0-9]{1,}')"
           echo $(git log --pretty=oneline ${{ steps.get_lastest_hash.outputs.lastTdHash }}..HEAD | awk '!/^$/' | grep "Update version to" | awk 'END{ print $1 }')
           echo "updateHash=$(git log --pretty=oneline ${{ steps.get_lastest_hash.outputs.lastTdHash }}..HEAD | awk '!/^$/' | grep "Update version to" | awk 'END{ print $1 }')" >> $GITHUB_OUTPUT
-
 
       - if: steps.update.outputs.updateHash == ''
         name: Cancelling => Not found newer version
