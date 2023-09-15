@@ -30,13 +30,13 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout tdLib repo
-        uses: actions/checkout@v3.1.0
+        uses: actions/checkout@v4.0.0
         with:
           ref: ${{ inputs.tdSha }}
           repository: tdlib/td
           
       - name: Install packages from apt
-        uses: awalsh128/cache-apt-pkgs-action@v1.1.3
+        uses: awalsh128/cache-apt-pkgs-action@v1.3.0
         with:
           packages: make git zlib1g-dev libssl-dev gperf php-cli cmake clang-${{ matrix.clang }} libc++-dev libc++abi-dev
           version: 1.0-${{ matrix.osVersion }}
@@ -60,7 +60,7 @@ jobs:
           cp /usr/lib/x86_64-linux-gnu/libz.so ../binaryR
           
       - name: Upload artifact
-        uses: actions/upload-artifact@v3.1.1
+        uses: actions/upload-artifact@v3.1.3
         with:
           retention-days: 5
           name: TDLib-x64-ubuntu-${{ matrix.osVersion }}

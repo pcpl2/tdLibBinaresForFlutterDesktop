@@ -16,8 +16,28 @@ jobs:
       td_version: ${{ steps.ver.outputs.td_version }}
       release_id: ${{ steps.create_release.outputs.id }}
     steps:
+
+      - name: Get latest release
+        id: latest_release
+        uses: cardinalby/git-get-release-action@v1.2.4
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        with:
+          repo: pcpl2/tdLibBinaresForFlutterDesktop
+          latest: true
+          prerelease: false
+          draft: false
+
+      - name: Get last tdlibBuild hash
+        id: get_lastest_hash
+        run: |
+          echo "${{ steps.latest_release.outputs.id }}"
+          echo "${{ steps.latest_release.outputs.name }}"
+          echo "${{ steps.latest_release.outputs.body }}" | grep "TDLib SHA" | awk '{ print $3 }'
+          echo "lastTdHash=$(echo "${{ steps.latest_release.outputs.body }}" | grep "TDLib SHA" | awk '{ print $3 }')" >> $GITHUB_OUTPUT
+        
       - name: Checkout tdLib repo
-        uses: actions/checkout@v3.1.0
+        uses: actions/checkout@v4.0.0
         with:
           ref: ${{ github.event.inputs.tdSha }}
           repository: tdlib/td
@@ -47,6 +67,7 @@ jobs:
               TDLib commit date: ${{ steps.vars.outputs.td_commit_date }}
               TDLib SHA: ${{ github.event.inputs.tdSha }}
               Build date: ${{ steps.vars.outputs.date }}
+              https://github.com/tdlib/td/compare/${{ steps.get_lastest_hash.outputs.lastTdHash }}...${{ github.event.inputs.tdSha }}
           name: '${{ steps.ver.outputs.td_version }}'
           tag_name: '${{ steps.ver.outputs.td_version }}'
           draft: true

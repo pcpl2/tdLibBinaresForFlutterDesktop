@@ -27,13 +27,13 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout tdLib repo
-        uses: actions/checkout@v3.1.0
+        uses: actions/checkout@v4.0.0
         with:
           ref: ${{ inputs.tdSha }}
           repository: tdlib/td
 
       - name: Cache vcpkg
-        uses: actions/cache@v3.0.11
+        uses: actions/cache@v3.3.2
         id: cache
         with:
           path: vcpkg
@@ -42,7 +42,7 @@ jobs:
 
       - name: Checkout vcpkg repo
         if: steps.cache.outputs.cache-hit != 'true'
-        uses: actions/checkout@v3.1.0
+        uses: actions/checkout@v4.0.0
         with:
           ref: 1b1ae50e1a69f7c659bd7d731e80b358d21c86ad
           repository: Microsoft/vcpkg
@@ -70,9 +70,9 @@ jobs:
           copy tdlib\bin\libssl-1_1-x64.dll binaryR
           copy tdlib\bin\tdjson.dll binaryR
           copy tdlib\bin\zlib1.dll binaryR
-          
+
       - name: Upload artifact
-        uses: actions/upload-artifact@v3.1.1
+        uses: actions/upload-artifact@v3.1.3
         with:
           retention-days: 5
           name: TDLib-x64-Windows-${{ matrix.osVersion }}
