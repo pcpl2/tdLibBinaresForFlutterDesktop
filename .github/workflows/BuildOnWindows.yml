@@ -47,23 +47,29 @@ jobs:
           ref: 1b1ae50e1a69f7c659bd7d731e80b358d21c86ad
           repository: Microsoft/vcpkg
           path: vcpkg
-          
+
       - name: Install packages
         if: steps.cache.outputs.cache-hit != 'true'
         run: |
          cd vcpkg
-         ./bootstrap-vcpkg.bat
+         ./bootstrap-vcpkg.bat -disableMetrics
          ./vcpkg.exe install gperf:x64-windows openssl:x64-windows zlib:x64-windows readline:x64-windows
-      
-      - name: Configure & Build
+
+      - name: Configure
         shell: cmd
         run: |
           mkdir build
           cd build
           cmake -A x64 -DCMAKE_INSTALL_PREFIX:PATH=../tdlib -DCMAKE_TOOLCHAIN_FILE:FILEPATH=../vcpkg/scripts/buildsystems/vcpkg.cmake ..
-          cmake --build . --target install --config Release -j 2
 
-          cd ..
+      - name: Configure & Build
+        shell: cmd
+        working-directory: ./build
+        run: |
+          cmake --build . --target install --config Release -j 1
+
+      - name: Copy files
+        run: |
           mkdir binaryR
           copy td\generate\scheme\td_api.tl binaryR
           copy tdlib\bin\libcrypto-1_1-x64.dll binaryR
@@ -83,7 +89,7 @@ jobs:
         run: |
           cd binaryR
           7z a ../TDLib-x64-Windows-${{ matrix.osVersion }}.zip *
-          
+
       - name: Upload release assets
         uses: actions/upload-release-asset@v1.0.2
         env:

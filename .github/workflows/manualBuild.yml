@@ -34,7 +34,7 @@ jobs:
           echo "${{ steps.latest_release.outputs.id }}"
           echo "${{ steps.latest_release.outputs.name }}"
           echo "${{ steps.latest_release.outputs.body }}" | grep "TDLib SHA" | awk '{ print $3 }'
-          echo "lastTdHash=$(echo "${{ steps.latest_release.outputs.body }}" | grep "TDLib SHA" | awk '{ print $3 }' | sed -E '$ s/\n+$//')" >> $GITHUB_OUTPUT
+          echo "lastTdHash=$(echo "${{ steps.latest_release.outputs.body }}" | grep "TDLib SHA" | awk '{ print $3 }' | sed -E ':a;N;$!ba;s/\n+$//')" >> $GITHUB_OUTPUT
       - name: Checkout tdLib repo
         uses: actions/checkout@v4.0.0
         with:
