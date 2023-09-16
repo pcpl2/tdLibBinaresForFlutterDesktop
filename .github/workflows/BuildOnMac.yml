@@ -43,27 +43,56 @@ jobs:
             ~/Library/Caches/Homebrew/downloads/*--foo-*
           key: brew-${{ matrix.os }}-
           restore-keys: brew-${{ matrix.os }}-
-          
+
       - name: Install packages
         if: steps.cache.outputs.cache-hit != 'true'
         run: brew install gperf cmake openssl
-      
-      - name: Configure & Build
+
+      - name: Disable Test, Benchmark and other not used projects build
+        run: |
+          cmakelists_content=$(cat CMakeLists.txt)
+          cmakelists_content=$(echo "$cmakelists_content" | sed 's/add_subdirectory(test)/# add_subdirectory(test)/')
+          cmakelists_content=$(echo "$cmakelists_content" | sed 's/add_subdirectory(benchmark)/# add_subdirectory(benchmark)/')
+          cmakelists_content=$(echo "$cmakelists_content" | sed 's/add_executable(tg_cli td\/telegram\/cli.cpp ${TL_TD_JSON_SOURCE})/# add_executable(tg_cli td\/telegram\/cli.cpp ${TL_TD_JSON_SOURCE})/')
+          cmakelists_content=$(echo "$cmakelists_content" | sed 's/target_link_libraries(tg_cli PRIVATE ${READLINE_LIBRARY})/# target_link_libraries(tg_cli PRIVATE ${READLINE_LIBRARY})/')
+          cmakelists_content=$(echo "$cmakelists_content" | sed 's/target_include_directories(tg_cli SYSTEM PRIVATE ${READLINE_INCLUDE_DIR})/# target_include_directories(tg_cli SYSTEM PRIVATE ${READLINE_INCLUDE_DIR})/')
+          cmakelists_content=$(echo "$cmakelists_content" | sed 's/target_compile_definitions(tg_cli PRIVATE -DUSE_READLINE=1)/# target_compile_definitions(tg_cli PRIVATE -DUSE_READLINE=1)/')
+          cmakelists_content=$(echo "$cmakelists_content" | sed 's/target_link_libraries(tg_cli PRIVATE memprof tdclient tdcore)/# target_link_libraries(tg_cli PRIVATE memprof tdclient tdcore)/')
+          cmakelists_content=$(echo "$cmakelists_content" | sed 's/add_dependencies(tg_cli tl_generate_json)/# add_dependencies(tg_cli tl_generate_json)/')
+          echo "$cmakelists_content" > CMakeLists.txt
+
+          cmakelists_tdactor_content=$(cat ./tdactor/CMakeLists.txt)
+          cmakelists_tdactor_content=$(echo "$cmakelists_tdactor_content" | sed 's/add_executable(example example\/example.cpp)/# add_executable(example example\/example.cpp)/')
+          cmakelists_tdactor_content=$(echo "$cmakelists_tdactor_content" | sed 's/target_link_libraries(example PRIVATE tdactor)/# target_link_libraries(example PRIVATE tdactor)/')
+          echo "$cmakelists_tdactor_content" > ./tdactor/CMakeLists.txt
+  
+          cmakelists_tddb_content=$(cat ./tddb/CMakeLists.txt)
+          cmakelists_tddb_content=$(echo "$cmakelists_tddb_content" | sed 's/add_executable(binlog_dump td\/db\/binlog\/binlog_dump.cpp)/# add_executable(binlog_dump td\/db\/binlog\/binlog_dump.cpp)/')
+          cmakelists_tddb_content=$(echo "$cmakelists_tddb_content" | sed 's/target_link_libraries(binlog_dump PRIVATE tddb)/# target_link_libraries(binlog_dump PRIVATE tddb)/')
+          echo "$cmakelists_tddb_content" > ./tddb/CMakeLists.txt
+
+      - name: Configure
         run: |
           mkdir build
           cd build
           cmake -DCMAKE_BUILD_TYPE=Release -DOPENSSL_ROOT_DIR=/usr/local/opt/openssl/ -DCMAKE_INSTALL_PREFIX:PATH=../tdlib ..
+
+      - name: Configure & Build
+        working-directory: ./build
+        run: |
           cmake --build . --target install -j 3
 
-          mkdir ../binaryR
-          cp ../td/generate/scheme/td_api.tl ../binaryR
-          cp ../tdlib/lib/libtdjson.dylib ../binaryR
-          cp ../tdlib/lib/libtdjson.${{ inputs.tdVersion }}.dylib ../binaryR
-          cp /usr/local/opt/openssl/lib/libcrypto.dylib ../binaryR
-          cp /usr/local/opt/openssl@3/lib/libcrypto.3.dylib ../binaryR
-          cp /usr/local/opt/openssl/lib/libssl.dylib ../binaryR
-          cp /usr/local/opt/readline/lib/libreadline.dylib ../binaryR
-          
+      - name: Copy files
+        run: |
+          mkdir binaryR
+          cp td/generate/scheme/td_api.tl ./binaryR
+          cp tdlib/lib/libtdjson.dylib ./binaryR
+          cp tdlib/lib/libtdjson.${{ inputs.tdVersion }}.dylib ./binaryR
+          cp /usr/local/opt/openssl/lib/libcrypto.dylib ./binaryR
+          cp /usr/local/opt/openssl@3/lib/libcrypto.3.dylib ./binaryR
+          cp /usr/local/opt/openssl/lib/libssl.dylib ./binaryR
+          cp /usr/local/opt/readline/lib/libreadline.dylib ./binaryR
+
       - name: Upload artifact
         uses: actions/upload-artifact@v3.1.3
         with:
@@ -73,7 +102,7 @@ jobs:
 
       - name: Make zip file
         run: zip -j TDLib-x64-macOS-${{ matrix.osVersion }}.zip binaryR/*
-          
+
       - name: Upload release assets
         uses: actions/upload-release-asset@v1.0.2
         env:

@@ -41,14 +41,30 @@ jobs:
           packages: make git zlib1g-dev libssl-dev gperf php-cli cmake clang-${{ matrix.clang }} libc++-dev libc++abi-dev
           version: 1.0-${{ matrix.osVersion }}
       
-      - name: Disable Test and Benchmark build
+      - name: Disable Test, Benchmark and other not used projects build
         run: |
           cmakelists_content=$(cat CMakeLists.txt)
           cmakelists_content=$(echo "$cmakelists_content" | sed 's/add_subdirectory(test)/# add_subdirectory(test)/')
           cmakelists_content=$(echo "$cmakelists_content" | sed 's/add_subdirectory(benchmark)/# add_subdirectory(benchmark)/')
+          cmakelists_content=$(echo "$cmakelists_content" | sed 's/add_executable(tg_cli td\/telegram\/cli.cpp ${TL_TD_JSON_SOURCE})/# add_executable(tg_cli td\/telegram\/cli.cpp ${TL_TD_JSON_SOURCE})/')
+          cmakelists_content=$(echo "$cmakelists_content" | sed 's/target_link_libraries(tg_cli PRIVATE ${READLINE_LIBRARY})/# target_link_libraries(tg_cli PRIVATE ${READLINE_LIBRARY})/')
+          cmakelists_content=$(echo "$cmakelists_content" | sed 's/target_include_directories(tg_cli SYSTEM PRIVATE ${READLINE_INCLUDE_DIR})/# target_include_directories(tg_cli SYSTEM PRIVATE ${READLINE_INCLUDE_DIR})/')
+          cmakelists_content=$(echo "$cmakelists_content" | sed 's/target_compile_definitions(tg_cli PRIVATE -DUSE_READLINE=1)/# target_compile_definitions(tg_cli PRIVATE -DUSE_READLINE=1)/')
+          cmakelists_content=$(echo "$cmakelists_content" | sed 's/target_link_libraries(tg_cli PRIVATE memprof tdclient tdcore)/# target_link_libraries(tg_cli PRIVATE memprof tdclient tdcore)/')
+          cmakelists_content=$(echo "$cmakelists_content" | sed 's/add_dependencies(tg_cli tl_generate_json)/# add_dependencies(tg_cli tl_generate_json)/')
           echo "$cmakelists_content" > CMakeLists.txt
 
-      - name: Configure & Build
+          cmakelists_tdactor_content=$(cat ./tdactor/CMakeLists.txt)
+          cmakelists_tdactor_content=$(echo "$cmakelists_tdactor_content" | sed 's/add_executable(example example\/example.cpp)/# add_executable(example example\/example.cpp)/')
+          cmakelists_tdactor_content=$(echo "$cmakelists_tdactor_content" | sed 's/target_link_libraries(example PRIVATE tdactor)/# target_link_libraries(example PRIVATE tdactor)/')
+          echo "$cmakelists_tdactor_content" > ./tdactor/CMakeLists.txt
+  
+          cmakelists_tddb_content=$(cat ./tddb/CMakeLists.txt)
+          cmakelists_tddb_content=$(echo "$cmakelists_tddb_content" | sed 's/add_executable(binlog_dump td\/db\/binlog\/binlog_dump.cpp)/# add_executable(binlog_dump td\/db\/binlog\/binlog_dump.cpp)/')
+          cmakelists_tddb_content=$(echo "$cmakelists_tddb_content" | sed 's/target_link_libraries(binlog_dump PRIVATE tddb)/# target_link_libraries(binlog_dump PRIVATE tddb)/')
+          echo "$cmakelists_tddb_content" > ./tddb/CMakeLists.txt
+
+      - name: Configure
         env:
           CC: /usr/bin/clang-${{ matrix.clang }}
           CXX: /usr/bin/clang++-${{ matrix.clang }}
@@ -57,15 +73,26 @@ jobs:
           mkdir build
           cd build
           cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX:PATH=../tdlib ..
+
+      - name: Build
+        env:
+          CC: /usr/bin/clang-${{ matrix.clang }}
+          CXX: /usr/bin/clang++-${{ matrix.clang }}
+          CXXFLAGS: -stdlib=libc++
+        working-directory: ./build
+        run: |
           cmake --build . --target install -j 2
 
+      - name: Copy files
+        working-directory: ./build
+        run: |
           mkdir ../binaryR
           cp ../td/generate/scheme/td_api.tl ../binaryR
           cp libtdjson.so ../binaryR
           cp /usr/lib/x86_64-linux-gnu/libcrypto.so ../binaryR
           cp /usr/lib/x86_64-linux-gnu/libssl.so ../binaryR
           cp /usr/lib/x86_64-linux-gnu/libz.so ../binaryR
-          
+
       - name: Upload artifact
         uses: actions/upload-artifact@v3.1.3
         with:
@@ -75,7 +102,7 @@ jobs:
 
       - name: Make zip file
         run: zip -j TDLib-x64-ubuntu-${{ matrix.osVersion }}.zip binaryR/*
-          
+
       - name: Upload release assets
         uses: actions/upload-release-asset@v1.0.2
         env:

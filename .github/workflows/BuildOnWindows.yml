@@ -55,10 +55,13 @@ jobs:
          ./bootstrap-vcpkg.bat -disableMetrics
          ./vcpkg.exe install gperf:x64-windows openssl:x64-windows zlib:x64-windows readline:x64-windows
       
-      - name: Disable Test and Benchmark build
+      - name: Disable Test, Benchmark and other not used projects build
         shell: pwsh
         run: |
           (Get-Content CMakeLists.txt) | ForEach-Object { $_ -replace 'add_subdirectory\(test\)', '# add_subdirectory(test)' } | ForEach-Object { $_ -replace 'add_subdirectory\(benchmark\)', '# add_subdirectory(benchmark)' } | Set-Content CMakeLists.txt
+          (Get-Content CMakeLists.txt) | ForEach-Object { $_ -replace 'add_executable\(tg_cli td/telegram/cli.cpp \$\{TL_TD_JSON_SOURCE\}\)', '# add_executable(tg_cli td/telegram/cli.cpp ${TL_TD_JSON_SOURCE})' } | ForEach-Object { $_ -replace 'target_link_libraries\(tg_cli PRIVATE memprof tdclient tdcore\)', '# target_link_libraries(tg_cli PRIVATE memprof tdclient tdcore)' } | ForEach-Object { $_ -replace 'add_dependencies\(tg_cli tl_generate_json\)', '# add_dependencies(tg_cli tl_generate_json)' } | Set-Content CMakeLists.txt
+          (Get-Content ./tdactor/CMakeLists.txt) | ForEach-Object { $_ -replace 'add_executable\(example example/example.cpp\)', '# add_executable(example example/example.cpp)' } | ForEach-Object { $_ -replace 'target_link_libraries\(example PRIVATE tdactor\)', '# target_link_libraries(example PRIVATE tdactor)' } | Set-Content ./tdactor/CMakeLists.txt
+          (Get-Content ./tddb/CMakeLists.txt) | ForEach-Object { $_ -replace 'add_executable\(binlog_dump td/db/binlog/binlog_dump.cpp\)', '# add_executable(binlog_dump td/db/binlog/binlog_dump.cpp)' } | ForEach-Object { $_ -replace 'target_link_libraries\(binlog_dump PRIVATE tddb\)', '# target_link_libraries(binlog_dump PRIVATE tddb)' } | Set-Content ./tddb/CMakeLists.txt
 
       - name: Configure
         shell: cmd
