@@ -54,6 +54,11 @@ jobs:
          cd vcpkg
          ./bootstrap-vcpkg.bat -disableMetrics
          ./vcpkg.exe install gperf:x64-windows openssl:x64-windows zlib:x64-windows readline:x64-windows
+      
+      - name: Disable Test and Benchmark build
+        shell: cmd
+        run: |
+          (Get-Content CMakeLists.txt) | ForEach-Object { $_ -replace 'add_subdirectory\(test\)', '# add_subdirectory(test)' } | ForEach-Object { $_ -replace 'add_subdirectory\(benchmark\)', '# add_subdirectory(benchmark)' } | Set-Content CMakeLists.txt
 
       - name: Configure
         shell: cmd
@@ -62,11 +67,11 @@ jobs:
           cd build
           cmake -A x64 -DCMAKE_INSTALL_PREFIX:PATH=../tdlib -DCMAKE_TOOLCHAIN_FILE:FILEPATH=../vcpkg/scripts/buildsystems/vcpkg.cmake ..
 
-      - name: Configure & Build
+      - name: Build
         shell: cmd
         working-directory: ./build
         run: |
-          cmake --build . --target install --config Release -j 1
+          cmake --build . --target install --config Release --parallel 1
 
       - name: Copy files
         run: |

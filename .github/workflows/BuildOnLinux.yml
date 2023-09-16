@@ -41,6 +41,13 @@ jobs:
           packages: make git zlib1g-dev libssl-dev gperf php-cli cmake clang-${{ matrix.clang }} libc++-dev libc++abi-dev
           version: 1.0-${{ matrix.osVersion }}
       
+      - name: Disable Test and Benchmark build
+        run: |
+          cmakelists_content=$(cat CMakeLists.txt)
+          cmakelists_content=$(echo "$cmakelists_content" | sed 's/add_subdirectory(test)/# add_subdirectory(test)/')
+          cmakelists_content=$(echo "$cmakelists_content" | sed 's/add_subdirectory(benchmark)/# add_subdirectory(benchmark)/')
+          echo "$cmakelists_content" > CMakeLists.txt
+
       - name: Configure & Build
         env:
           CC: /usr/bin/clang-${{ matrix.clang }}
