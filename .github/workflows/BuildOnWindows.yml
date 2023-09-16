@@ -56,7 +56,7 @@ jobs:
          ./vcpkg.exe install gperf:x64-windows openssl:x64-windows zlib:x64-windows readline:x64-windows
       
       - name: Disable Test and Benchmark build
-        shell: cmd
+        shell: pwsh
         run: |
           (Get-Content CMakeLists.txt) | ForEach-Object { $_ -replace 'add_subdirectory\(test\)', '# add_subdirectory(test)' } | ForEach-Object { $_ -replace 'add_subdirectory\(benchmark\)', '# add_subdirectory(benchmark)' } | Set-Content CMakeLists.txt
 
