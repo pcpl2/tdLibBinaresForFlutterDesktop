@@ -44,7 +44,7 @@ jobs:
         if: steps.cache.outputs.cache-hit != 'true'
         uses: actions/checkout@v4.0.0
         with:
-          ref: 1b1ae50e1a69f7c659bd7d731e80b358d21c86ad
+          ref: cd5e746ec203c8c3c61647e0886a8df8c1e78e41
           repository: Microsoft/vcpkg
           path: vcpkg
 
