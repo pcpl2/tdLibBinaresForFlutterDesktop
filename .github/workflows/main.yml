@@ -41,9 +41,9 @@ jobs:
            echo "${{ steps.latest_release.outputs.name }}"
            echo "${{ steps.latest_release.outputs.body }}" | grep "TDLib SHA" | awk '{ print $3 }'
            echo "lastTdHash=$(echo "${{ steps.latest_release.outputs.body }}" | grep "TDLib SHA" | awk '{ print $3 }' | sed -E '$ s/\n+$//')" >> $GITHUB_OUTPUT
-           
+
       - name: Checkout tdLib repo
-        uses: actions/checkout@v4.0.0
+        uses: actions/checkout@v4.1.1
         with:
           repository: tdlib/td
           path: td
@@ -59,7 +59,7 @@ jobs:
 
       - if: steps.update.outputs.updateHash == ''
         name: Cancelling => Not found newer version
-        uses: andymckay/cancel-action@0.3
+        uses: andymckay/cancel-action@0.4
 
       - name: Checkout and get version
         if: steps.update.outputs.updateHash != ''
