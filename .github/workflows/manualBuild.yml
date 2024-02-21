@@ -19,7 +19,7 @@ jobs:
 
       - name: Get latest release
         id: latest_release
-        uses: cardinalby/git-get-release-action@1.2.4
+        uses: cardinalby/git-get-release-action@1.2.5
         env:
           GITHUB_TOKEN: ${{ github.token }}
         with:
@@ -60,7 +60,7 @@ jobs:
         
       - name: Create release
         id: create_release
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v0.1.15
         with:
           body: |
               TDLib commit date: ${{ steps.vars.outputs.td_commit_date }}
@@ -81,7 +81,7 @@ jobs:
   BuildLinux:
     needs: create_release
     name: Build Linux
-    uses: pcpl2/tdLibBinaresForFlutterDesktop/.github/workflows/BuildOnLinux.yml@main
+    uses: ./.github/workflows/BuildOnLinux.yml
     with:
       tdSha: ${{ github.event.inputs.tdSha }}
     secrets:
@@ -91,7 +91,7 @@ jobs:
   BuildmacOS:
     needs: create_release
     name: Build macOS
-    uses: pcpl2/tdLibBinaresForFlutterDesktop/.github/workflows/BuildOnMac.yml@main
+    uses: ./.github/workflows/BuildOnMac.yml
     with:
       tdSha: ${{ github.event.inputs.tdSha }}
       tdVersion: ${{ needs.create_release.outputs.td_version }}
@@ -102,7 +102,7 @@ jobs:
   BuildWindows:
     needs: create_release
     name: Build Windows
-    uses: pcpl2/tdLibBinaresForFlutterDesktop/.github/workflows/BuildOnWindows.yml@main
+    uses: ./.github/workflows/BuildOnWindows.yml
     with:
       tdSha: ${{ github.event.inputs.tdSha }}
     secrets:
