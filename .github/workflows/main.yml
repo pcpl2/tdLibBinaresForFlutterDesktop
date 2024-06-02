@@ -18,14 +18,14 @@ jobs:
     steps:
       - name: Getting latest binares version
         id: tdPebuilt
-        uses: pozetroninc/github-action-get-latest-release@v0.7.0
+        uses: pozetroninc/github-action-get-latest-release@v0.8.0
         with:
           repository: pcpl2/tdLibBinaresForFlutterDesktop
           excludes: prerelease, draft
 
       - name: Get latest release
         id: latest_release
-        uses: cardinalby/git-get-release-action@1.2.4
+        uses: cardinalby/git-get-release-action@1.2.5
         env:
           GITHUB_TOKEN: ${{ github.token }}
         with:
@@ -43,7 +43,7 @@ jobs:
            echo "lastTdHash=$(echo "${{ steps.latest_release.outputs.body }}" | grep "TDLib SHA" | awk '{ print $3 }' | sed -E '$ s/\n+$//')" >> $GITHUB_OUTPUT
 
       - name: Checkout tdLib repo
-        uses: actions/checkout@v4.1.1
+        uses: actions/checkout@v4.1.6
         with:
           repository: tdlib/td
           path: td
@@ -75,7 +75,7 @@ jobs:
       - name: Create release
         id: create_release
         if: steps.update.outputs.updateHash != ''
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v2.0.5
         with:
           body: |
               TDLib commit date: ${{ steps.vars.outputs.td_commit_date }}
