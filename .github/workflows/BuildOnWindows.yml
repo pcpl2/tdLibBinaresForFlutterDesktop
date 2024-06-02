@@ -7,8 +7,8 @@ on:
         required: false
         type: string
     secrets:
-      uploadUrl:
-        required: true
+      # uploadUrl:
+      #   required: true
       GH_TOKEN:
         required: true
 
@@ -92,18 +92,18 @@ jobs:
           name: TDLib-x64-Windows-${{ matrix.osVersion }}
           path: binaryR
 
-      - name: Make zip file
-        shell: cmd
-        run: |
-          cd binaryR
-          7z a ../TDLib-x64-Windows-${{ matrix.osVersion }}.zip *
+      # - name: Make zip file
+      #   shell: cmd
+      #   run: |
+      #     cd binaryR
+      #     7z a ../TDLib-x64-Windows-${{ matrix.osVersion }}.zip *
 
-      - name: Upload release assets
-        uses: actions/upload-release-asset@v1.0.2
-        env:
-          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
-        with:
-          upload_url: ${{ secrets.uploadUrl }}
-          asset_name: TDLib-x64-Windows-${{ matrix.osVersion }}.zip
-          asset_path: ${{ github.workspace }}/TDLib-x64-Windows-${{ matrix.osVersion }}.zip
-          asset_content_type: application/octet-stream
+      # - name: Upload release assets
+      #   uses: actions/upload-release-asset@v1.0.2
+      #   env:
+      #     GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
+      #   with:
+      #     upload_url: ${{ secrets.uploadUrl }}
+      #     asset_name: TDLib-x64-Windows-${{ matrix.osVersion }}.zip
+      #     asset_path: ${{ github.workspace }}/TDLib-x64-Windows-${{ matrix.osVersion }}.zip
+      #     asset_content_type: application/octet-stream
