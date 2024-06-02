@@ -127,9 +127,9 @@ jobs:
         id: create_release
         uses: softprops/action-gh-release@v2.0.5
         with:
+          files: "*.zip"
           body_path: "release.md"
           name: '${{ needs.create_release.outputs.td_version }}'
           tag_name: '${{ needs.create_release.outputs.td_version }}'
-          files: *.zip
           draft: true
           prerelease: false
