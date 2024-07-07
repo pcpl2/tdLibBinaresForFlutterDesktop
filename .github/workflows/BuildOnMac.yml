@@ -21,17 +21,23 @@ jobs:
     strategy:
       matrix:
         include:
-        #- os: macos-14
-        #  osVersion: 14
+        - os: macos-14
+          osVersion: 14
+          arch: arm64
+        - os: macos-14
+          osVersion: 14
+          arch: x64
         - os: macos-13
           osVersion: 13
+          arch: x64
         - os: macos-12
           osVersion: 12
+          arch: x64
 
     runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout tdLib repo
-        uses: actions/checkout@v4.1.6
+        uses: actions/checkout@v4.1.7
         with:
           ref: ${{ inputs.tdSha }}
           repository: tdlib/td
@@ -73,18 +79,34 @@ jobs:
           cmakelists_tddb_content=$(echo "$cmakelists_tddb_content" | sed 's/target_link_libraries(binlog_dump PRIVATE tddb)/# target_link_libraries(binlog_dump PRIVATE tddb)/')
           echo "$cmakelists_tddb_content" > ./tddb/CMakeLists.txt
 
-      - name: Configure
+      - name: Set Arch x64 for macos 14 and later
+        if: matrix.arch == 'x64' && matrix.osVersion >= 14
+        run: |
+          cmakelists_content=$(cat CMakeLists.txt)
+          cmakelists_content=$(echo "$cmakelists_content" | sed '0,/cmake_minimum_required(VERSION 3.0.2 FATAL_ERROR)/s//cmake_minimum_required(VERSION 3.0.2 FATAL_ERROR)\nset(CMAKE_OSX_ARCHITECTURES "x86_64")/')
+          echo "$cmakelists_content" > CMakeLists.txt
+
+      - name: Configure x64
+        if: matrix.arch == 'x64'
         run: |
           mkdir build
           cd build
           cmake -DCMAKE_BUILD_TYPE=Release -DOPENSSL_ROOT_DIR=/usr/local/opt/openssl/ -DCMAKE_INSTALL_PREFIX:PATH=../tdlib ..
+
+      - name: Configure arm64
+        if: matrix.arch == 'arm64'
+        run: |
+          mkdir build
+          cd build
+          cmake -DCMAKE_BUILD_TYPE=Release -DOPENSSL_ROOT_DIR=/opt/homebrew/opt/openssl/ -DCMAKE_INSTALL_PREFIX:PATH=../tdlib ..
 
       - name: Build
         working-directory: ./build
         run: |
           cmake --build . --target install -j 3
 
-      - name: Copy files
+      - name: Copy files x64
+        if: matrix.arch == 'x64'
         run: |
           mkdir binaryR
           cp td/generate/scheme/td_api.tl ./binaryR
@@ -95,11 +117,23 @@ jobs:
           cp /usr/local/opt/openssl/lib/libssl.dylib ./binaryR
           cp /usr/local/opt/readline/lib/libreadline.dylib ./binaryR
 
+      - name: Copy files arm64
+        if: matrix.arch == 'arm64'
+        run: |
+          mkdir binaryR
+          cp td/generate/scheme/td_api.tl ./binaryR
+          cp tdlib/lib/libtdjson.dylib ./binaryR
+          cp tdlib/lib/libtdjson.${{ inputs.tdVersion }}.dylib ./binaryR
+          cp /opt/homebrew/opt/openssl/lib/libcrypto.dylib ./binaryR
+          cp /opt/homebrew/opt/openssl@3/lib/libcrypto.3.dylib ./binaryR
+          cp /opt/homebrew/opt/openssl/lib/libssl.dylib ./binaryR
+          cp /usr/local/opt/readline/lib/libreadline.dylib ./binaryR
+
       - name: Upload artifact
-        uses: actions/upload-artifact@v4.3.3
+        uses: actions/upload-artifact@v4.3.4
         with:
           retention-days: 5
-          name: TDLib-x64-macOS-${{ matrix.osVersion }}
+          name: TDLib-${{ matrix.arch }}-macOS-${{ matrix.osVersion }}
           path: binaryR
 
       # - name: Make zip file
