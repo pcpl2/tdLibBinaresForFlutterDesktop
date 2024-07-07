@@ -20,6 +20,9 @@ jobs:
     strategy:
       matrix:
         include:
+        - clang: 18
+          os: ubuntu-24.04
+          osVersion: 24.04
         - clang: 14
           os: ubuntu-22.04
           osVersion: 22.04
@@ -30,17 +33,25 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout tdLib repo
-        uses: actions/checkout@v4.1.6
+        uses: actions/checkout@v4.1.7
         with:
           ref: ${{ inputs.tdSha }}
           repository: tdlib/td
           
       - name: Install packages from apt
+        if: matrix.osVersion != 24.04
         uses: awalsh128/cache-apt-pkgs-action@v1.4.2
         with:
           packages: make git zlib1g-dev libssl-dev gperf php-cli cmake clang-${{ matrix.clang }} libc++-dev libc++abi-dev
           version: 1.0-${{ matrix.osVersion }}
-      
+
+      - name: Install packages from apt Clang 18
+        if: matrix.osVersion == 24.04
+        uses: awalsh128/cache-apt-pkgs-action@v1.4.2
+        with:
+          packages: make git zlib1g-dev libssl-dev gperf php-cli cmake clang-${{ matrix.clang }} libc++-18-dev libc++abi-18-dev
+          version: 1.0-${{ matrix.osVersion }}
+
       - name: Disable Test, Benchmark and other not used projects build
         run: |
           cmakelists_content=$(cat CMakeLists.txt)
@@ -94,7 +105,7 @@ jobs:
           cp /usr/lib/x86_64-linux-gnu/libz.so ../binaryR
 
       - name: Upload artifact
-        uses: actions/upload-artifact@v4.3.3
+        uses: actions/upload-artifact@v4.3.4
         with:
           retention-days: 5
           name: TDLib-x64-ubuntu-${{ matrix.osVersion }}
