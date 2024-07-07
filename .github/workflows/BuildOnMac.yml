@@ -54,7 +54,7 @@ jobs:
 
       - name: Install packages x64 on macos 14 and later
         if: steps.cache.outputs.cache-hit != 'true' && matrix.arch == 'x64' && matrix.osVersion >= 14
-        run: arch -x86_64 /usr/local/bin/brew install gperf cmake openssl readline
+        run: arch -x86_64 brew install gperf cmake openssl readline
 
       - name: Install packages
         if: steps.cache.outputs.cache-hit != 'true'
