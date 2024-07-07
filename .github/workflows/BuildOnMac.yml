@@ -17,7 +17,7 @@ on:
 
 jobs:
   macOS-Build:
-    name: Build on macOS ${{ matrix.osVersion }}
+    name: Build on macOS ${{ matrix.osVersion }} ${{ matrix.arch }}
     strategy:
       matrix:
         include:
@@ -49,8 +49,12 @@ jobs:
           path: |
             ~/Library/Caches/Homebrew/foo--*
             ~/Library/Caches/Homebrew/downloads/*--foo-*
-          key: brew-${{ matrix.os }}-
-          restore-keys: brew-${{ matrix.os }}-
+          key: brew-${{ matrix.os }}-${{ matrix.arch }}
+          restore-keys: brew-${{ matrix.os }}-${{ matrix.arch }}
+
+      - name: Install packages x64 on macos 14 and later
+        if: steps.cache.outputs.cache-hit != 'true' && matrix.arch == 'x64' && matrix.osVersion >= 14
+        run: arch -x86_64 /usr/local/bin/brew install gperf cmake openssl readline
 
       - name: Install packages
         if: steps.cache.outputs.cache-hit != 'true'
@@ -86,15 +90,15 @@ jobs:
           cmakelists_content=$(echo "$cmakelists_content" | sed '0,/cmake_minimum_required(VERSION 3.0.2 FATAL_ERROR)/s//cmake_minimum_required(VERSION 3.0.2 FATAL_ERROR)\nset(CMAKE_OSX_ARCHITECTURES "x86_64")/')
           echo "$cmakelists_content" > CMakeLists.txt
 
-      - name: Configure x64
-        if: matrix.arch == 'x64'
+      - name: Configure x64 
+        if: matrix.arch == 'x64' || matrix.osVersion < 14
         run: |
           mkdir build
           cd build
           cmake -DCMAKE_BUILD_TYPE=Release -DOPENSSL_ROOT_DIR=/usr/local/opt/openssl/ -DCMAKE_INSTALL_PREFIX:PATH=../tdlib ..
 
-      - name: Configure arm64
-        if: matrix.arch == 'arm64'
+      - name: Configure arm64 or macos 14 and later 
+        if: matrix.arch == 'arm64' || matrix.osVersion >= 14
         run: |
           mkdir build
           cd build
@@ -106,7 +110,7 @@ jobs:
           cmake --build . --target install -j 3
 
       - name: Copy files x64
-        if: matrix.arch == 'x64'
+        if: matrix.arch == 'x64' || matrix.osVersion < 14
         run: |
           mkdir binaryR
           cp td/generate/scheme/td_api.tl ./binaryR
@@ -117,8 +121,8 @@ jobs:
           cp /usr/local/opt/openssl/lib/libssl.dylib ./binaryR
           cp /usr/local/opt/readline/lib/libreadline.dylib ./binaryR
 
-      - name: Copy files arm64
-        if: matrix.arch == 'arm64'
+      - name: Copy files arm64 or macos 14 and later 
+        if: matrix.arch == 'arm64' || matrix.osVersion >= 14
         run: |
           mkdir binaryR
           cp td/generate/scheme/td_api.tl ./binaryR
@@ -127,7 +131,7 @@ jobs:
           cp /opt/homebrew/opt/openssl/lib/libcrypto.dylib ./binaryR
           cp /opt/homebrew/opt/openssl@3/lib/libcrypto.3.dylib ./binaryR
           cp /opt/homebrew/opt/openssl/lib/libssl.dylib ./binaryR
-          cp /usr/local/opt/readline/lib/libreadline.dylib ./binaryR
+          cp /opt/homebrew/opt/readline/lib/libreadline.dylib ./binaryR
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4.3.4
