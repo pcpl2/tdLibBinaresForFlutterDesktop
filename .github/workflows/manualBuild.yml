@@ -38,7 +38,7 @@ jobs:
           echo "${{ steps.latest_release.outputs.body }}" | grep "TDLib SHA" | awk '{ print $3 }'
           echo "lastTdHash=$(echo "${{ steps.latest_release.outputs.body }}" | grep "TDLib SHA" | awk '{ print $3 }' | sed -E ':a;N;$!ba;s/\n//g')" >> $GITHUB_OUTPUT
       - name: Checkout tdLib repo
-        uses: actions/checkout@v4.1.6
+        uses: actions/checkout@v7.0.0
         with:
           ref: ${{ github.event.inputs.tdSha }}
           repository: tdlib/td
@@ -95,7 +95,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: [create_release, BuildLinux, BuildmacOS, BuildWindows]
     steps:
-      - uses: actions/download-artifact@v4.1.8
+      - uses: actions/download-artifact@v8.0.1
 
       - name: Get current date
         id: date
@@ -125,7 +125,7 @@ jobs:
 
       - name: Create release
         id: create_release
-        uses: softprops/action-gh-release@v2.0.6
+        uses: softprops/action-gh-release@v3.0.1
         with:
           files: "*.zip"
           body_path: "release.md"
