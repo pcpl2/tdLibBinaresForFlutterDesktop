@@ -61,7 +61,7 @@ jobs:
           echo "td_version=$(grep -in 'project(TDLib' CMakeLists.txt| egrep -o '([0-9]{1,}\.)+[0-9]{1,}')" >> $GITHUB_OUTPUT
   BuildLinux:
     needs: create_release
-    name: Build Linux
+    name: Build Linux (TDLib ${{ needs.create_release.outputs.td_version }})
     uses: ./.github/workflows/BuildOnLinux.yml
     with:
       tdSha: ${{ github.event.inputs.tdSha }}
@@ -71,7 +71,7 @@ jobs:
 
   BuildmacOS:
     needs: create_release
-    name: Build macOS
+    name: Build macOS (TDLib ${{ needs.create_release.outputs.td_version }})
     uses: ./.github/workflows/BuildOnMac.yml
     with:
       tdSha: ${{ github.event.inputs.tdSha }}
@@ -82,7 +82,7 @@ jobs:
 
   BuildWindows:
     needs: create_release
-    name: Build Windows
+    name: Build Windows (TDLib ${{ needs.create_release.outputs.td_version }})
     uses: ./.github/workflows/BuildOnWindows.yml
     with:
       tdSha: ${{ github.event.inputs.tdSha }}
@@ -105,11 +105,18 @@ jobs:
 
       - name: Run Script
         shell: bash
+        env:
+          TD_COMMIT_DATE: ${{ needs.create_release.outputs.td_commit_date }}
+          TD_SHA: ${{ needs.create_release.outputs.tdSha }}
+          LAST_TD_HASH: ${{ needs.create_release.outputs.lastTdHash }}
+          BUILD_DATE: ${{ steps.date.outputs.dateTime }}
         run: |
-              echo "TDLib commit date: ${{ needs.create_release.outputs.td_commit_date }}" >> "release.md"
-              echo "TDLib commit SHA: ${{ needs.create_release.outputs.tdSha }}" >> "release.md"
-              echo "Build date: ${{ steps.date.outputs.dateTime }}" >> "release.md"
-              echo "https://github.com/tdlib/td/compare/${{ needs.create_release.outputs.lastTdHash }}...${{ needs.create_release.outputs.tdSha }}" >> "release.md"
+              echo "TDLib commit date: $TD_COMMIT_DATE" >> "release.md"
+              echo "TDLib SHA: $TD_SHA" >> "release.md"
+              echo "Build date: $BUILD_DATE" >> "release.md"
+              if [ -n "$LAST_TD_HASH" ]; then
+                echo "Changelog commits: https://github.com/tdlib/td/compare/$LAST_TD_HASH...$TD_SHA" >> "release.md"
+              fi
               echo "" >> "release.md"
               for dir in */; do
                 dir=${dir%/}
