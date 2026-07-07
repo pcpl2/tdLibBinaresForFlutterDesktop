@@ -44,7 +44,7 @@ jobs:
         if: steps.cache.outputs.cache-hit != 'true'
         uses: actions/checkout@v7.0.0
         with:
-          ref: cd5e746ec203c8c3c61647e0886a8df8c1e78e41
+          ref: bc3512a509f9d29b37346a7e7e929f9a26e66c7e
           repository: Microsoft/vcpkg
           path: vcpkg
 
@@ -68,7 +68,7 @@ jobs:
         run: |
           mkdir build
           cd build
-          cmake -A x64 -DCMAKE_INSTALL_PREFIX:PATH=../tdlib -DTD_ENABLE_MULTI_PROCESSOR_COMPILATION=ON -DCMAKE_TOOLCHAIN_FILE:FILEPATH=../vcpkg/scripts/buildsystems/vcpkg.cmake ..
+          cmake -A x64 -DCMAKE_POLICY_VERSION_MINIMUM=3.5 -DCMAKE_INSTALL_PREFIX:PATH=../tdlib -DTD_ENABLE_MULTI_PROCESSOR_COMPILATION=ON -DCMAKE_TOOLCHAIN_FILE:FILEPATH=../vcpkg/scripts/buildsystems/vcpkg.cmake ..
 
       - name: Build
         shell: cmd
